@@ -46,6 +46,9 @@ htmlcov/
 # Locally installed Ansible collections
 collections/ansible_collections/
 
+# Inventory file
+inventory/hosts.yaml
+
 
 # ============================================================================
 # Ansible Galaxy Build Artifacts
