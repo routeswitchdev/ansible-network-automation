@@ -1,0 +1,15 @@
+---
+# Reserved and protected VLAN IDs this role will never create, modify, or
+# delete, regardless of requested action. See .claude/rules/capabilities/vlan.md.
+
+vlan_protected_reserved_ids:
+  - 0      # Reserved, not configurable.
+  - 1      # Protected default VLAN.
+  - 1002   # Cisco-reserved legacy VLAN.
+  - 1003   # Cisco-reserved legacy VLAN.
+  - 1004   # Cisco-reserved legacy VLAN.
+  - 1005   # Cisco-reserved legacy VLAN.
+  - 4095   # Reserved, not configurable.
+
+vlan_id_min: 1
+vlan_id_max: 4094
