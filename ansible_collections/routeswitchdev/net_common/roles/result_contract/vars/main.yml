@@ -1,0 +1,65 @@
+---
+# Common result/evidence contract.
+#
+# Processing order:
+#   capability constructs result
+#   - Common validates
+#   - Common sanitizes/redacts
+#   - Common records
+#   - Common persists
+#
+# This file defines the contract only. It does not implement redaction,
+# recording, persistence, or summarization.
+
+# Evidence artifact schema version.
+# This applies to the full evidence artifact, not each per-host result.
+# Increment only for incompatible structural or semantic changes.
+common_schema_version: "1.0"
+
+# Required fields for every per-host Common result.
+capability_result_required_keys:
+  - host
+  - capability
+  - status
+  - execution_mode
+  - verification
+  - timestamp
+  - warnings
+  - errors
+
+# Optional capability-supplied fields.
+capability_result_optional_keys:
+  - requested_action
+  - outcome
+  - previous_state
+  - resulting_state
+
+# Common's normalized result for this host's capability execution.
+# These are Common result values, not literal Ansible PLAY RECAP counters.
+common_status_allowed_values:
+  - ok
+  - changed
+  - failed
+  - unreachable
+  - skipped
+
+# Whether the capability was executed normally or in Ansible check mode.
+common_execution_mode_allowed_values:
+  - apply
+  - check
+
+# Verification state for the capability result.
+common_verification_allowed_values:
+  - passed
+  - failed
+  - not_attempted
+
+# Documentation only.
+# Common does not interpret or enforce capability outcomes.
+capability_result_outcome_examples:
+  - compliant
+  - provisioned
+  - remediated
+  - removed
+  - blocked
+  - unverified

@@ -1,0 +1,1127 @@
+---
+# Independent tests for net_common/roles/result_contract/tasks/validate_result_contract.yml.
+#
+# These tests run entirely on localhost and make no device connections.
+#
+# Test strategy:
+#   - Positive cases must be accepted by the validator.
+#   - Negative cases must be rejected by the validator.
+#   - Validation failures are captured with block/rescue.
+#   - ansible.builtin.assert determines whether each test actually passed.
+#
+# From collection root, run with:
+#
+#   ansible-playbook tests/result_contract/test_validate_result_contract.yml
+
+
+# =============================================================================
+# TEST 01
+#
+# capability_result must be defined.
+#
+# This is intentionally a separate first play. capability_result is never
+# declared before validation runs, ensuring the variable is genuinely undefined.
+# =============================================================================
+
+- name: "TEST 01: Undefined capability_result is rejected"
+  hosts: localhost
+  gather_facts: false
+
+  vars_files:
+    - ../../roles/result_contract/vars/main.yml
+
+  tasks:
+
+    - name: Initialize test result
+      ansible.builtin.set_fact:
+        contract_validation_rejected: false
+        contract_validation_error: ""
+
+    - name: Attempt contract validation
+      block:
+
+        - name: Run contract validation
+          ansible.builtin.include_tasks:
+            file: ../../roles/result_contract/tasks/validate_result_contract.yml
+
+      rescue:
+
+        - name: Record validation rejection
+          ansible.builtin.set_fact:
+            contract_validation_rejected: true
+            contract_validation_error: >-
+              {{
+                ansible_failed_result.msg
+                | default('Validation failed')
+              }}
+
+    - name: "PASS/FAIL: Undefined capability_result must be rejected"
+      ansible.builtin.assert:
+        that:
+          - contract_validation_rejected | bool
+        fail_msg: >-
+          TEST 01 FAILED: capability_result was undefined, but contract
+          validation accepted it.
+        success_msg: >-
+          TEST 01 PASSED: Undefined capability_result was correctly rejected.
+
+
+# =============================================================================
+# Remaining contract tests
+# =============================================================================
+
+- name: Test capability_result contract
+  hosts: localhost
+  gather_facts: false
+
+  vars_files:
+    - ../../roles/result_contract/vars/main.yml
+
+  tasks:
+
+    # =========================================================================
+    # POSITIVE TESTS
+    # =========================================================================
+
+    # -------------------------------------------------------------------------
+    # TEST 00A
+    #
+    # Minimal valid capability_result should pass.
+    # This verifies that optional fields are truly optional.
+    # -------------------------------------------------------------------------
+
+    - name: "TEST 00A: Minimal valid result is accepted"
+      vars:
+        capability_result:
+          host: iol-l2
+          capability: vlan_management
+          status: ok
+          execution_mode: apply
+          verification: passed
+          timestamp: "2026-09-01T00:00:00Z"
+          warnings: []
+          errors: []
+
+      block:
+
+        - name: Initialize test result
+          ansible.builtin.set_fact:
+            contract_validation_rejected: false
+            contract_validation_error: ""
+
+        - name: Attempt contract validation
+          block:
+
+            - name: Run contract validation
+              ansible.builtin.include_tasks:
+                file: ../../roles/result_contract/tasks/validate_result_contract.yml
+
+          rescue:
+
+            - name: Record validation rejection
+              ansible.builtin.set_fact:
+                contract_validation_rejected: true
+                contract_validation_error: >-
+                  {{
+                    ansible_failed_result.msg
+                    | default('Validation failed')
+                  }}
+
+        - name: "PASS/FAIL: Minimal valid result must be accepted"
+          ansible.builtin.assert:
+            that:
+              - not (contract_validation_rejected | bool)
+            fail_msg: >-
+              TEST 00A FAILED: A valid minimal capability_result was rejected.
+              Validation error: {{ contract_validation_error }}
+            success_msg: >-
+              TEST 00A PASSED: Minimal valid capability_result was accepted.
+
+
+    # -------------------------------------------------------------------------
+    # TEST 00B
+    #
+    # Fully populated valid capability_result should pass.
+    # -------------------------------------------------------------------------
+
+    - name: "TEST 00B: Fully populated valid result is accepted"
+      vars:
+        capability_result:
+          host: iol-l2
+          capability: vlan_management
+          status: changed
+          requested_action: create
+          outcome: provisioned
+          execution_mode: apply
+          verification: passed
+          timestamp: "2026-09-01T00:00:00Z"
+          previous_state: {}
+          resulting_state:
+            vlan_id: 100
+            vlan_name: SALES
+          warnings:
+            - "VLAN name was auto-assigned"
+          errors: []
+
+      block:
+
+        - name: Initialize test result
+          ansible.builtin.set_fact:
+            contract_validation_rejected: false
+            contract_validation_error: ""
+
+        - name: Attempt contract validation
+          block:
+
+            - name: Run contract validation
+              ansible.builtin.include_tasks:
+                file: ../../roles/result_contract/tasks/validate_result_contract.yml
+
+          rescue:
+
+            - name: Record validation rejection
+              ansible.builtin.set_fact:
+                contract_validation_rejected: true
+                contract_validation_error: >-
+                  {{
+                    ansible_failed_result.msg
+                    | default('Validation failed')
+                  }}
+
+        - name: "PASS/FAIL: Fully populated valid result must be accepted"
+          ansible.builtin.assert:
+            that:
+              - not (contract_validation_rejected | bool)
+            fail_msg: >-
+              TEST 00B FAILED: A fully populated valid capability_result
+              was rejected. Validation error:
+              {{ contract_validation_error }}
+            success_msg: >-
+              TEST 00B PASSED: Fully populated valid capability_result
+              was accepted.
+
+
+    # =========================================================================
+    # NEGATIVE TESTS
+    # =========================================================================
+
+    # -------------------------------------------------------------------------
+    # TEST 02
+    #
+    # capability_result must be a mapping/dict.
+    # -------------------------------------------------------------------------
+
+    - name: "TEST 02: Non-mapping capability_result is rejected"
+      vars:
+        capability_result: "not-a-mapping"
+
+      block:
+
+        - name: Initialize test result
+          ansible.builtin.set_fact:
+            contract_validation_rejected: false
+            contract_validation_error: ""
+
+        - name: Attempt contract validation
+          block:
+
+            - name: Run contract validation
+              ansible.builtin.include_tasks:
+                file: ../../roles/result_contract/tasks/validate_result_contract.yml
+
+          rescue:
+
+            - name: Record validation rejection
+              ansible.builtin.set_fact:
+                contract_validation_rejected: true
+                contract_validation_error: >-
+                  {{
+                    ansible_failed_result.msg
+                    | default('Validation failed')
+                  }}
+
+        - name: "PASS/FAIL: Non-mapping result must be rejected"
+          ansible.builtin.assert:
+            that:
+              - contract_validation_rejected | bool
+            fail_msg: >-
+              TEST 02 FAILED: A non-mapping capability_result was accepted.
+            success_msg: >-
+              TEST 02 PASSED: Non-mapping capability_result was correctly
+              rejected.
+
+
+    # -------------------------------------------------------------------------
+    # TEST 03
+    #
+    # All required keys must be present.
+    # -------------------------------------------------------------------------
+
+    - name: "TEST 03: Missing required key is rejected"
+      vars:
+        capability_result:
+          host: iol-l2
+          capability: vlan_management
+          execution_mode: apply
+          verification: passed
+          timestamp: "2026-09-01T00:00:00Z"
+          warnings: []
+          errors: []
+
+      block:
+
+        - name: Initialize test result
+          ansible.builtin.set_fact:
+            contract_validation_rejected: false
+            contract_validation_error: ""
+
+        - name: Attempt contract validation
+          block:
+
+            - name: Run contract validation
+              ansible.builtin.include_tasks:
+                file: ../../roles/result_contract/tasks/validate_result_contract.yml
+
+          rescue:
+
+            - name: Record validation rejection
+              ansible.builtin.set_fact:
+                contract_validation_rejected: true
+                contract_validation_error: >-
+                  {{
+                    ansible_failed_result.msg
+                    | default('Validation failed')
+                  }}
+
+        - name: "PASS/FAIL: Missing required key must be rejected"
+          ansible.builtin.assert:
+            that:
+              - contract_validation_rejected | bool
+            fail_msg: >-
+              TEST 03 FAILED: capability_result missing required key
+              'status' was accepted.
+            success_msg: >-
+              TEST 03 PASSED: Missing required key was correctly rejected.
+
+
+    # -------------------------------------------------------------------------
+    # TEST 04
+    #
+    # Unknown keys must be rejected.
+    # -------------------------------------------------------------------------
+
+    - name: "TEST 04: Unknown key is rejected"
+      vars:
+        capability_result:
+          host: iol-l2
+          capability: vlan_management
+          status: ok
+          execution_mode: apply
+          verification: passed
+          timestamp: "2026-09-01T00:00:00Z"
+          warnings: []
+          errors: []
+          invalid_key: invalid_value
+
+      block:
+
+        - name: Initialize test result
+          ansible.builtin.set_fact:
+            contract_validation_rejected: false
+            contract_validation_error: ""
+
+        - name: Attempt contract validation
+          block:
+
+            - name: Run contract validation
+              ansible.builtin.include_tasks:
+                file: ../../roles/result_contract/tasks/validate_result_contract.yml
+
+          rescue:
+
+            - name: Record validation rejection
+              ansible.builtin.set_fact:
+                contract_validation_rejected: true
+                contract_validation_error: >-
+                  {{
+                    ansible_failed_result.msg
+                    | default('Validation failed')
+                  }}
+
+        - name: "PASS/FAIL: Unknown key must be rejected"
+          ansible.builtin.assert:
+            that:
+              - contract_validation_rejected | bool
+            fail_msg: >-
+              TEST 04 FAILED: capability_result containing an unknown key
+              was accepted.
+            success_msg: >-
+              TEST 04 PASSED: Unknown key was correctly rejected.
+
+
+    # -------------------------------------------------------------------------
+    # TEST 05
+    #
+    # status must be one of the allowed values.
+    # -------------------------------------------------------------------------
+
+    - name: "TEST 05: Invalid status is rejected"
+      vars:
+        capability_result:
+          host: iol-l2
+          capability: vlan_management
+          status: successful
+          execution_mode: apply
+          verification: passed
+          timestamp: "2026-09-01T00:00:00Z"
+          warnings: []
+          errors: []
+
+      block:
+
+        - name: Initialize test result
+          ansible.builtin.set_fact:
+            contract_validation_rejected: false
+            contract_validation_error: ""
+
+        - name: Attempt contract validation
+          block:
+
+            - name: Run contract validation
+              ansible.builtin.include_tasks:
+                file: ../../roles/result_contract/tasks/validate_result_contract.yml
+
+          rescue:
+
+            - name: Record validation rejection
+              ansible.builtin.set_fact:
+                contract_validation_rejected: true
+                contract_validation_error: >-
+                  {{
+                    ansible_failed_result.msg
+                    | default('Validation failed')
+                  }}
+
+        - name: "PASS/FAIL: Invalid status must be rejected"
+          ansible.builtin.assert:
+            that:
+              - contract_validation_rejected | bool
+            fail_msg: >-
+              TEST 05 FAILED: Invalid status 'successful' was accepted.
+            success_msg: >-
+              TEST 05 PASSED: Invalid status was correctly rejected.
+
+
+    # -------------------------------------------------------------------------
+    # TEST 06
+    #
+    # execution_mode must be apply or check.
+    # -------------------------------------------------------------------------
+
+    - name: "TEST 06: Invalid execution_mode is rejected"
+      vars:
+        capability_result:
+          host: iol-l2
+          capability: vlan_management
+          status: ok
+          execution_mode: dry_run
+          verification: passed
+          timestamp: "2026-09-01T00:00:00Z"
+          warnings: []
+          errors: []
+
+      block:
+
+        - name: Initialize test result
+          ansible.builtin.set_fact:
+            contract_validation_rejected: false
+            contract_validation_error: ""
+
+        - name: Attempt contract validation
+          block:
+
+            - name: Run contract validation
+              ansible.builtin.include_tasks:
+                file: ../../roles/result_contract/tasks/validate_result_contract.yml
+
+          rescue:
+
+            - name: Record validation rejection
+              ansible.builtin.set_fact:
+                contract_validation_rejected: true
+                contract_validation_error: >-
+                  {{
+                    ansible_failed_result.msg
+                    | default('Validation failed')
+                  }}
+
+        - name: "PASS/FAIL: Invalid execution_mode must be rejected"
+          ansible.builtin.assert:
+            that:
+              - contract_validation_rejected | bool
+            fail_msg: >-
+              TEST 06 FAILED: Invalid execution_mode 'dry_run' was accepted.
+            success_msg: >-
+              TEST 06 PASSED: Invalid execution_mode was correctly rejected.
+
+
+    # -------------------------------------------------------------------------
+    # TEST 07
+    #
+    # verification must be one of the allowed values.
+    # -------------------------------------------------------------------------
+
+    - name: "TEST 07: Invalid verification is rejected"
+      vars:
+        capability_result:
+          host: iol-l2
+          capability: vlan_management
+          status: ok
+          execution_mode: apply
+          verification: successful
+          timestamp: "2026-09-01T00:00:00Z"
+          warnings: []
+          errors: []
+
+      block:
+
+        - name: Initialize test result
+          ansible.builtin.set_fact:
+            contract_validation_rejected: false
+            contract_validation_error: ""
+
+        - name: Attempt contract validation
+          block:
+
+            - name: Run contract validation
+              ansible.builtin.include_tasks:
+                file: ../../roles/result_contract/tasks/validate_result_contract.yml
+
+          rescue:
+
+            - name: Record validation rejection
+              ansible.builtin.set_fact:
+                contract_validation_rejected: true
+                contract_validation_error: >-
+                  {{
+                    ansible_failed_result.msg
+                    | default('Validation failed')
+                  }}
+
+        - name: "PASS/FAIL: Invalid verification must be rejected"
+          ansible.builtin.assert:
+            that:
+              - contract_validation_rejected | bool
+            fail_msg: >-
+              TEST 07 FAILED: Invalid verification value was accepted.
+            success_msg: >-
+              TEST 07 PASSED: Invalid verification was correctly rejected.
+
+
+    # -------------------------------------------------------------------------
+    # TEST 08A
+    #
+    # host must be a non-empty string.
+    # -------------------------------------------------------------------------
+
+    - name: "TEST 08A: Empty host is rejected"
+      vars:
+        capability_result:
+          host: ""
+          capability: vlan_management
+          status: ok
+          execution_mode: apply
+          verification: passed
+          timestamp: "2026-09-01T00:00:00Z"
+          warnings: []
+          errors: []
+
+      block:
+
+        - name: Initialize test result
+          ansible.builtin.set_fact:
+            contract_validation_rejected: false
+            contract_validation_error: ""
+
+        - name: Attempt contract validation
+          block:
+
+            - name: Run contract validation
+              ansible.builtin.include_tasks:
+                file: ../../roles/result_contract/tasks/validate_result_contract.yml
+
+          rescue:
+
+            - name: Record validation rejection
+              ansible.builtin.set_fact:
+                contract_validation_rejected: true
+                contract_validation_error: >-
+                  {{
+                    ansible_failed_result.msg
+                    | default('Validation failed')
+                  }}
+
+        - name: "PASS/FAIL: Empty host must be rejected"
+          ansible.builtin.assert:
+            that:
+              - contract_validation_rejected | bool
+            fail_msg: >-
+              TEST 08A FAILED: Empty host was accepted.
+            success_msg: >-
+              TEST 08A PASSED: Empty host was correctly rejected.
+
+
+    # -------------------------------------------------------------------------
+    # TEST 08B
+    #
+    # capability must be a non-empty string.
+    # -------------------------------------------------------------------------
+
+    - name: "TEST 08B: Non-string capability is rejected"
+      vars:
+        capability_result:
+          host: iol-l2
+          capability: 12345
+          status: ok
+          execution_mode: apply
+          verification: passed
+          timestamp: "2026-09-01T00:00:00Z"
+          warnings: []
+          errors: []
+
+      block:
+
+        - name: Initialize test result
+          ansible.builtin.set_fact:
+            contract_validation_rejected: false
+            contract_validation_error: ""
+
+        - name: Attempt contract validation
+          block:
+
+            - name: Run contract validation
+              ansible.builtin.include_tasks:
+                file: ../../roles/result_contract/tasks/validate_result_contract.yml
+
+          rescue:
+
+            - name: Record validation rejection
+              ansible.builtin.set_fact:
+                contract_validation_rejected: true
+                contract_validation_error: >-
+                  {{
+                    ansible_failed_result.msg
+                    | default('Validation failed')
+                  }}
+
+        - name: "PASS/FAIL: Non-string capability must be rejected"
+          ansible.builtin.assert:
+            that:
+              - contract_validation_rejected | bool
+            fail_msg: >-
+              TEST 08B FAILED: Non-string capability was accepted.
+            success_msg: >-
+              TEST 08B PASSED: Non-string capability was correctly rejected.
+
+
+    # -------------------------------------------------------------------------
+    # TEST 09
+    #
+    # timestamp must match the required UTC timestamp format.
+    # -------------------------------------------------------------------------
+
+    - name: "TEST 09: Malformed timestamp is rejected"
+      vars:
+        capability_result:
+          host: iol-l2
+          capability: vlan_management
+          status: ok
+          execution_mode: apply
+          verification: passed
+          timestamp: "Sept 1 2026, 8am"
+          warnings: []
+          errors: []
+
+      block:
+
+        - name: Initialize test result
+          ansible.builtin.set_fact:
+            contract_validation_rejected: false
+            contract_validation_error: ""
+
+        - name: Attempt contract validation
+          block:
+
+            - name: Run contract validation
+              ansible.builtin.include_tasks:
+                file: ../../roles/result_contract/tasks/validate_result_contract.yml
+
+          rescue:
+
+            - name: Record validation rejection
+              ansible.builtin.set_fact:
+                contract_validation_rejected: true
+                contract_validation_error: >-
+                  {{
+                    ansible_failed_result.msg
+                    | default('Validation failed')
+                  }}
+
+        - name: "PASS/FAIL: Malformed timestamp must be rejected"
+          ansible.builtin.assert:
+            that:
+              - contract_validation_rejected | bool
+            fail_msg: >-
+              TEST 09 FAILED: Malformed timestamp was accepted.
+            success_msg: >-
+              TEST 09 PASSED: Malformed timestamp was correctly rejected.
+
+
+    # -------------------------------------------------------------------------
+    # TEST 10A
+    #
+    # requested_action must be a non-empty string when provided.
+    # -------------------------------------------------------------------------
+
+    - name: "TEST 10A: Empty requested_action is rejected"
+      vars:
+        capability_result:
+          host: iol-l2
+          capability: vlan_management
+          status: ok
+          execution_mode: apply
+          verification: passed
+          timestamp: "2026-09-01T00:00:00Z"
+          requested_action: ""
+          warnings: []
+          errors: []
+
+      block:
+
+        - name: Initialize test result
+          ansible.builtin.set_fact:
+            contract_validation_rejected: false
+            contract_validation_error: ""
+
+        - name: Attempt contract validation
+          block:
+
+            - name: Run contract validation
+              ansible.builtin.include_tasks:
+                file: ../../roles/result_contract/tasks/validate_result_contract.yml
+
+          rescue:
+
+            - name: Record validation rejection
+              ansible.builtin.set_fact:
+                contract_validation_rejected: true
+                contract_validation_error: >-
+                  {{
+                    ansible_failed_result.msg
+                    | default('Validation failed')
+                  }}
+
+        - name: "PASS/FAIL: Empty requested_action must be rejected"
+          ansible.builtin.assert:
+            that:
+              - contract_validation_rejected | bool
+            fail_msg: >-
+              TEST 10A FAILED: Empty requested_action was accepted.
+            success_msg: >-
+              TEST 10A PASSED: Empty requested_action was correctly rejected.
+
+
+    # -------------------------------------------------------------------------
+    # TEST 10B
+    #
+    # outcome must be a non-empty string when provided.
+    # -------------------------------------------------------------------------
+
+    - name: "TEST 10B: Non-string outcome is rejected"
+      vars:
+        capability_result:
+          host: iol-l2
+          capability: vlan_management
+          status: ok
+          execution_mode: apply
+          verification: passed
+          timestamp: "2026-09-01T00:00:00Z"
+          outcome: 12345
+          warnings: []
+          errors: []
+
+      block:
+
+        - name: Initialize test result
+          ansible.builtin.set_fact:
+            contract_validation_rejected: false
+            contract_validation_error: ""
+
+        - name: Attempt contract validation
+          block:
+
+            - name: Run contract validation
+              ansible.builtin.include_tasks:
+                file: ../../roles/result_contract/tasks/validate_result_contract.yml
+
+          rescue:
+
+            - name: Record validation rejection
+              ansible.builtin.set_fact:
+                contract_validation_rejected: true
+                contract_validation_error: >-
+                  {{
+                    ansible_failed_result.msg
+                    | default('Validation failed')
+                  }}
+
+        - name: "PASS/FAIL: Non-string outcome must be rejected"
+          ansible.builtin.assert:
+            that:
+              - contract_validation_rejected | bool
+            fail_msg: >-
+              TEST 10B FAILED: Non-string outcome was accepted.
+            success_msg: >-
+              TEST 10B PASSED: Non-string outcome was correctly rejected.
+
+
+    # -------------------------------------------------------------------------
+    # TEST 11A
+    #
+    # warnings must be a list.
+    # -------------------------------------------------------------------------
+
+    - name: "TEST 11A: warnings as a string is rejected"
+      vars:
+        capability_result:
+          host: iol-l2
+          capability: vlan_management
+          status: ok
+          execution_mode: apply
+          verification: passed
+          timestamp: "2026-09-01T00:00:00Z"
+          warnings: "This should be a list"
+          errors: []
+
+      block:
+
+        - name: Initialize test result
+          ansible.builtin.set_fact:
+            contract_validation_rejected: false
+            contract_validation_error: ""
+
+        - name: Attempt contract validation
+          block:
+
+            - name: Run contract validation
+              ansible.builtin.include_tasks:
+                file: ../../roles/result_contract/tasks/validate_result_contract.yml
+
+          rescue:
+
+            - name: Record validation rejection
+              ansible.builtin.set_fact:
+                contract_validation_rejected: true
+                contract_validation_error: >-
+                  {{
+                    ansible_failed_result.msg
+                    | default('Validation failed')
+                  }}
+
+        - name: "PASS/FAIL: warnings must be a list"
+          ansible.builtin.assert:
+            that:
+              - contract_validation_rejected | bool
+            fail_msg: >-
+              TEST 11A FAILED: warnings as a string was accepted.
+            success_msg: >-
+              TEST 11A PASSED: warnings as a string was correctly rejected.
+
+
+    # -------------------------------------------------------------------------
+    # TEST 11B
+    #
+    # errors must be a list.
+    # -------------------------------------------------------------------------
+
+    - name: "TEST 11B: errors as a mapping is rejected"
+      vars:
+        capability_result:
+          host: iol-l2
+          capability: vlan_management
+          status: ok
+          execution_mode: apply
+          verification: passed
+          timestamp: "2026-09-01T00:00:00Z"
+          warnings: []
+          errors:
+            code: 500
+
+      block:
+
+        - name: Initialize test result
+          ansible.builtin.set_fact:
+            contract_validation_rejected: false
+            contract_validation_error: ""
+
+        - name: Attempt contract validation
+          block:
+
+            - name: Run contract validation
+              ansible.builtin.include_tasks:
+                file: ../../roles/result_contract/tasks/validate_result_contract.yml
+
+          rescue:
+
+            - name: Record validation rejection
+              ansible.builtin.set_fact:
+                contract_validation_rejected: true
+                contract_validation_error: >-
+                  {{
+                    ansible_failed_result.msg
+                    | default('Validation failed')
+                  }}
+
+        - name: "PASS/FAIL: errors must be a list"
+          ansible.builtin.assert:
+            that:
+              - contract_validation_rejected | bool
+            fail_msg: >-
+              TEST 11B FAILED: errors as a mapping was accepted.
+            success_msg: >-
+              TEST 11B PASSED: errors as a mapping was correctly rejected.
+
+
+    # -------------------------------------------------------------------------
+    # TEST 12
+    #
+    # Every item in warnings must be a string.
+    # -------------------------------------------------------------------------
+
+    - name: "TEST 12: Non-string warnings item is rejected"
+      vars:
+        capability_result:
+          host: iol-l2
+          capability: vlan_management
+          status: ok
+          execution_mode: apply
+          verification: passed
+          timestamp: "2026-09-01T00:00:00Z"
+          warnings:
+            - "This warning is valid"
+            - 404
+          errors: []
+
+      block:
+
+        - name: Initialize test result
+          ansible.builtin.set_fact:
+            contract_validation_rejected: false
+            contract_validation_error: ""
+
+        - name: Attempt contract validation
+          block:
+
+            - name: Run contract validation
+              ansible.builtin.include_tasks:
+                file: ../../roles/result_contract/tasks/validate_result_contract.yml
+
+          rescue:
+
+            - name: Record validation rejection
+              ansible.builtin.set_fact:
+                contract_validation_rejected: true
+                contract_validation_error: >-
+                  {{
+                    ansible_failed_result.msg
+                    | default('Validation failed')
+                  }}
+
+        - name: "PASS/FAIL: Every warnings item must be a string"
+          ansible.builtin.assert:
+            that:
+              - contract_validation_rejected | bool
+            fail_msg: >-
+              TEST 12 FAILED: warnings containing a non-string item
+              was accepted.
+            success_msg: >-
+              TEST 12 PASSED: Non-string warnings item was correctly rejected.
+
+
+    # -------------------------------------------------------------------------
+    # TEST 13
+    #
+    # Every item in errors must be a string.
+    # -------------------------------------------------------------------------
+
+    - name: "TEST 13: Non-string errors item is rejected"
+      vars:
+        capability_result:
+          host: iol-l2
+          capability: vlan_management
+          status: failed
+          execution_mode: apply
+          verification: failed
+          timestamp: "2026-09-01T00:00:00Z"
+          warnings: []
+          errors:
+            - "This error is valid"
+            - code: 500
+
+      block:
+
+        - name: Initialize test result
+          ansible.builtin.set_fact:
+            contract_validation_rejected: false
+            contract_validation_error: ""
+
+        - name: Attempt contract validation
+          block:
+
+            - name: Run contract validation
+              ansible.builtin.include_tasks:
+                file: ../../roles/result_contract/tasks/validate_result_contract.yml
+
+          rescue:
+
+            - name: Record validation rejection
+              ansible.builtin.set_fact:
+                contract_validation_rejected: true
+                contract_validation_error: >-
+                  {{
+                    ansible_failed_result.msg
+                    | default('Validation failed')
+                  }}
+
+        - name: "PASS/FAIL: Every errors item must be a string"
+          ansible.builtin.assert:
+            that:
+              - contract_validation_rejected | bool
+            fail_msg: >-
+              TEST 13 FAILED: errors containing a non-string item
+              was accepted.
+            success_msg: >-
+              TEST 13 PASSED: Non-string errors item was correctly rejected.
+
+
+    # -------------------------------------------------------------------------
+    # TEST 14A
+    #
+    # previous_state must be a mapping when provided.
+    # -------------------------------------------------------------------------
+
+    - name: "TEST 14A: Non-mapping previous_state is rejected"
+      vars:
+        capability_result:
+          host: iol-l2
+          capability: vlan_management
+          status: changed
+          execution_mode: apply
+          verification: passed
+          timestamp: "2026-09-01T00:00:00Z"
+          previous_state: "VLAN 100"
+          warnings: []
+          errors: []
+
+      block:
+
+        - name: Initialize test result
+          ansible.builtin.set_fact:
+            contract_validation_rejected: false
+            contract_validation_error: ""
+
+        - name: Attempt contract validation
+          block:
+
+            - name: Run contract validation
+              ansible.builtin.include_tasks:
+                file: ../../roles/result_contract/tasks/validate_result_contract.yml
+
+          rescue:
+
+            - name: Record validation rejection
+              ansible.builtin.set_fact:
+                contract_validation_rejected: true
+                contract_validation_error: >-
+                  {{
+                    ansible_failed_result.msg
+                    | default('Validation failed')
+                  }}
+
+        - name: "PASS/FAIL: previous_state must be a mapping"
+          ansible.builtin.assert:
+            that:
+              - contract_validation_rejected | bool
+            fail_msg: >-
+              TEST 14A FAILED: Non-mapping previous_state was accepted.
+            success_msg: >-
+              TEST 14A PASSED: Non-mapping previous_state was correctly
+              rejected.
+
+
+    # -------------------------------------------------------------------------
+    # TEST 14B
+    #
+    # resulting_state must be a mapping when provided.
+    # -------------------------------------------------------------------------
+
+    - name: "TEST 14B: Non-mapping resulting_state is rejected"
+      vars:
+        capability_result:
+          host: iol-l2
+          capability: vlan_management
+          status: changed
+          execution_mode: apply
+          verification: passed
+          timestamp: "2026-09-01T00:00:00Z"
+          resulting_state:
+            - not
+            - a
+            - mapping
+          warnings: []
+          errors: []
+
+      block:
+
+        - name: Initialize test result
+          ansible.builtin.set_fact:
+            contract_validation_rejected: false
+            contract_validation_error: ""
+
+        - name: Attempt contract validation
+          block:
+
+            - name: Run contract validation
+              ansible.builtin.include_tasks:
+                file: ../../roles/result_contract/tasks/validate_result_contract.yml
+
+          rescue:
+
+            - name: Record validation rejection
+              ansible.builtin.set_fact:
+                contract_validation_rejected: true
+                contract_validation_error: >-
+                  {{
+                    ansible_failed_result.msg
+                    | default('Validation failed')
+                  }}
+
+        - name: "PASS/FAIL: resulting_state must be a mapping"
+          ansible.builtin.assert:
+            that:
+              - contract_validation_rejected | bool
+            fail_msg: >-
+              TEST 14B FAILED: Non-mapping resulting_state was accepted.
+            success_msg: >-
+              TEST 14B PASSED: Non-mapping resulting_state was correctly
+              rejected.
+
+
+    # =========================================================================
+    # TEST SUITE COMPLETE
+    # =========================================================================
+
+    - name: Common result contract test suite completed
+      ansible.builtin.debug:
+        msg: >-
+          All capability_result contract tests completed successfully.

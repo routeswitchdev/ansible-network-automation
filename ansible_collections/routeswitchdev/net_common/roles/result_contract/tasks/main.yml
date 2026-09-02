@@ -1,0 +1,15 @@
+---
+# net_common / result_contract role entrypoint.
+#
+# Mandatory processing order (see common.md):
+#   1. capability constructs capability_result   <- done by the calling role
+#   2. Common validates the contract              <- implemented below
+#   3. Common sanitizes/redacts                    <- not yet implemented
+#   4. Common records the result                   <- not yet implemented
+#   5. Common persists the evidence                <- not yet implemented
+#
+# This file is intentionally minimal. Add an include_tasks for each later
+# step only once that step is actually implemented and tested.
+
+- name: "common: validate result contract"
+  ansible.builtin.include_tasks: validate_result_contract.yml

@@ -1,0 +1,23 @@
+---
+# Copy to inventory/hosts.yaml and replace the placeholder hosts below with
+# your own switches - the names and addresses here are not real devices,
+# just an example of the shape. inventory/hosts.yaml itself is gitignored
+# (see the "Personal lab topology" entry in ansible/.gitignore), so your
+# real hostnames/IPs never get committed.
+all:
+  children:
+
+    switches:
+      children:
+
+        cisco_switches:
+          children:
+
+            cisco_ios_switches:
+              hosts:
+
+                your-switch-1:
+                  ansible_host: 192.0.2.10
+
+                your-switch-2:
+                  ansible_host: 192.0.2.11
