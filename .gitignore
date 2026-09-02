@@ -48,6 +48,7 @@ collections/ansible_collections/
 
 # Inventory file
 inventory/hosts.yaml
+inventory/group_vars/*
 
 
 # ============================================================================
