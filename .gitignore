@@ -74,9 +74,8 @@ vault_password*
 # Claude Code
 # ============================================================================
 
-CLAUDE.local.md
-.claude/settings.local.json
-
+CLAUDE*
+.claude*
 
 # ============================================================================
 # Temporary Files
