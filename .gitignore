@@ -45,6 +45,9 @@ htmlcov/
 
 # Locally installed Ansible collections
 collections/ansible_collections/
+ansible_collections/cisco/
+ansible_collections/ansible/
+ansible_collections/*.info/
 
 # Inventory file
 inventory/hosts.yml
