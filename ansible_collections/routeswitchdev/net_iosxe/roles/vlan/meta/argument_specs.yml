@@ -32,6 +32,7 @@ argument_specs:
           - verify
         description: >-
           Requested action. 'create' means desired state present. 'delete'
-          means desired state absent (not yet implemented by this role,
-          rejected during validation). 'verify' validates, gathers, and
-          evaluates without applying configuration changes.
+          means desired state absent; blocked when the VLAN is in use by an
+          access interface or a trunk's allowed-VLAN list. 'verify'
+          validates, gathers, and evaluates without applying configuration
+          changes.
