@@ -2,15 +2,20 @@
 # Scenario: 'create' requested for a VLAN that already exists with the
 # same name being requested.
 #
-# Precondition: VLAN 111 must already exist with name SALES. Create it
+# Precondition: VLAN 111 must already exist with name LOGISTICS. Create it
 # independently first if needed - e.g. run this same fixture once, which
 # will provision it with that name, then run it again for the actual test
 # point.
+#
+# Note: use a vlan_name not already claimed by another VLAN on the same
+# device - Cisco IOS requires VLAN names to be unique across the whole
+# VLAN database, and a collision will be silently rejected by the device
+# rather than raise a clear error.
 #
 # Expected behavior:
 #   - No configuration change is made.
 #   - status: ok, changed: false, verification: passed, outcome: compliant.
 
 vlan_id: 111
-vlan_name: SALES
+vlan_name: LOGISTICS
 vlan_action: create

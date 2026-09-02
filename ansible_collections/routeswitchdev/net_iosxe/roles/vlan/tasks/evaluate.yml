@@ -13,6 +13,40 @@
 # Action handled later:
 #   - 'create' may apply changes when required.
 #   - 'verify' reports the evaluation result without changing the device
+#
+# Cisco IOS requires VLAN names to be unique across the whole VLAN
+# database. A requested vlan_name already claimed by a different vlan_id
+# can never be achieved, so 'create' fails fast here rather than letting
+# apply.yml send a rename the device will silently reject. 'verify' does
+# not need this check - an unattainable name already differs from the
+# current name, which is correctly reported as noncompliant below
+# regardless of the reason.
+
+- name: "vlan: find other VLANs already using the requested vlan_name"
+  ansible.builtin.set_fact:
+    vlan_name_conflicts: >-
+      {{
+        vlan_gathered_result.gathered
+        | selectattr('name', 'equalto', vlan_name | default(''))
+        | rejectattr('vlan_id', 'equalto', vlan_id)
+        | list
+      }}
+  when:
+    - vlan_action == 'create'
+    - vlan_name is defined
+
+- name: "vlan: reject vlan_name already in use by a different vlan_id"
+  ansible.builtin.fail:
+    msg: >-
+      vlan_name '{{ vlan_name }}' is already in use by VLAN
+      {{ vlan_name_conflicts[0].vlan_id }}. VLAN names must be unique;
+      choose a different name or resolve the conflict on the device
+      before retrying.
+  when:
+    - vlan_action == 'create'
+    - vlan_name is defined
+    - vlan_name_conflicts is defined
+    - vlan_name_conflicts | length > 0
 
 - name: "vlan: evaluate outcome when VLAN does not exist"
   ansible.builtin.set_fact:

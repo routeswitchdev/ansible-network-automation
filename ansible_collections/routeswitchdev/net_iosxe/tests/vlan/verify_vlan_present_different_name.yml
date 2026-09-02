@@ -3,7 +3,11 @@
 # vlan_name that does not match its current name.
 #
 # Precondition: VLAN 122 must already exist with a name other than
-# OPERATIONS (e.g. FINANCE). Create it independently first if needed.
+# OPERATIONS (e.g. WAREHOUSE). Create it independently first if needed.
+#
+# Note: use a vlan_name not already claimed by another VLAN on the same
+# device - Cisco IOS requires VLAN names to be unique across the whole
+# VLAN database.
 #
 # Expected behavior:
 #   - No configuration change is made - 'verify' never mutates the device,
