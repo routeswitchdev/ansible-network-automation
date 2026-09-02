@@ -1,0 +1,48 @@
+---
+# net_iosxe/vlan: post-change verification.
+#
+# Runs only after apply.yml changes the device.
+# Re-gathers VLAN state and verifies convergence independently.
+# Verification failure fails the host.
+
+- name: "vlan: re-gather VLAN configuration after apply"
+  cisco.ios.ios_vlans:
+    state: gathered
+  register: vlan_reverify_gathered_result
+
+- name: "vlan: extract resulting VLAN entry for the requested vlan_id"
+  ansible.builtin.set_fact:
+    vlan_resulting: >-
+      {{
+        vlan_reverify_gathered_result.gathered
+        | selectattr('vlan_id', 'equalto', vlan_id)
+        | list
+        | first
+        | default(none)
+      }}
+
+- name: "vlan: initialize post-change verification result"
+  ansible.builtin.set_fact:
+    vlan_verification: failed
+
+- name: "vlan: pass verification when VLAN exists and name is unmanaged"
+  ansible.builtin.set_fact:
+    vlan_verification: passed
+  when:
+    - vlan_resulting is not none
+    - vlan_name is not defined
+
+- name: "vlan: pass verification when VLAN exists and name matches"
+  ansible.builtin.set_fact:
+    vlan_verification: passed
+  when:
+    - vlan_resulting is not none
+    - vlan_name is defined
+    - vlan_resulting.name == vlan_name
+
+- name: "vlan: fail when resulting state does not satisfy requested intent"
+  ansible.builtin.fail:
+    msg: >-
+      Verification failed for vlan_id {{ vlan_id }}: resulting device state
+      does not satisfy the requested intent after applying configuration.
+  when: vlan_verification != 'passed'

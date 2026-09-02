@@ -1,0 +1,9 @@
+---
+# Scenario: vlan_id 1 (protected default VLAN).
+#
+# Expected behavior:
+#   - Rejected by tasks/validate.yml's protected/reserved-ID check.
+#   - No device configuration change is made.
+
+vlan_id: 1
+vlan_action: create

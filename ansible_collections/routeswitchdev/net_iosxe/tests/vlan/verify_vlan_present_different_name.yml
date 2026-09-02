@@ -1,0 +1,17 @@
+---
+# Scenario: 'verify' requested for a VLAN that exists, but with a
+# vlan_name that does not match its current name.
+#
+# Precondition: VLAN 122 must already exist with a name other than
+# OPERATIONS (e.g. FINANCE). Create it independently first if needed.
+#
+# Expected behavior:
+#   - No configuration change is made - 'verify' never mutates the device,
+#     even when drift is found.
+#   - The host is NOT failed. A noncompliant verify result is a successful
+#     discovery, not an execution error.
+#   - status: ok, verification: failed, outcome: noncompliant.
+
+vlan_id: 122
+vlan_name: OPERATIONS
+vlan_action: verify

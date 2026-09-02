@@ -1,0 +1,15 @@
+---
+# Scenario: 'create' requested for a VLAN that already exists, with no
+# vlan_name provided.
+#
+# Precondition: VLAN 110 must already exist on the target device (any
+# name). Create it independently first if needed - e.g. run this same
+# fixture once, which will provision it, then run it again for the actual
+# test point.
+#
+# Expected behavior:
+#   - No configuration change is made (vlan_name is unmanaged when omitted).
+#   - status: ok, changed: false, verification: passed, outcome: compliant.
+
+vlan_id: 110
+vlan_action: create

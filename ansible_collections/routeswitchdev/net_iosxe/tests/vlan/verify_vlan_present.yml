@@ -1,0 +1,13 @@
+---
+# Scenario: 'verify' requested for a VLAN that exists, with no vlan_name
+# provided (name unmanaged).
+#
+# Precondition: VLAN 120 must already exist on the target device (any
+# name). Create it independently first if needed.
+#
+# Expected behavior:
+#   - No configuration change is made (verify never mutates the device).
+#   - status: ok, verification: passed, outcome: compliant.
+
+vlan_id: 120
+vlan_action: verify

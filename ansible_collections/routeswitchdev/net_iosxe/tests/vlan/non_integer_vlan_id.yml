@@ -1,0 +1,9 @@
+---
+# Scenario: vlan_id is not an integer.
+#
+# Expected behavior:
+#   - Rejected by meta/argument_specs.yml (type: int) before any task runs.
+#   - No device is contacted.
+
+vlan_id: abc
+vlan_action: create

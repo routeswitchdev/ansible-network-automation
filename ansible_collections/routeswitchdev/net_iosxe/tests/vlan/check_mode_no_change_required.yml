@@ -1,0 +1,16 @@
+---
+# Scenario: check-mode run where the device is already compliant.
+#
+# Precondition: VLAN 301 must already exist (any name) before this fixture
+# is run with --check. Establish that state first by running this same
+# fixture once WITHOUT --check, then run it again WITH --check for the
+# actual test point.
+#
+# Expected behavior:
+#   - No configuration change is made (none would be needed regardless of
+#     check mode).
+#   - status: ok, changed: false, execution_mode: check,
+#     verification: passed, outcome: compliant.
+
+vlan_id: 301
+vlan_action: create

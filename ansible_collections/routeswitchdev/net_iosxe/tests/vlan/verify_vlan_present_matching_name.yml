@@ -1,0 +1,14 @@
+---
+# Scenario: 'verify' requested for a VLAN that exists with the name being
+# checked.
+#
+# Precondition: VLAN 121 must already exist with name FINANCE. Create it
+# independently first if needed.
+#
+# Expected behavior:
+#   - No configuration change is made.
+#   - status: ok, verification: passed, outcome: compliant.
+
+vlan_id: 121
+vlan_name: FINANCE
+vlan_action: verify

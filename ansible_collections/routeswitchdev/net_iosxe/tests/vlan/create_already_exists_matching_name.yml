@@ -1,0 +1,16 @@
+---
+# Scenario: 'create' requested for a VLAN that already exists with the
+# same name being requested.
+#
+# Precondition: VLAN 111 must already exist with name SALES. Create it
+# independently first if needed - e.g. run this same fixture once, which
+# will provision it with that name, then run it again for the actual test
+# point.
+#
+# Expected behavior:
+#   - No configuration change is made.
+#   - status: ok, changed: false, verification: passed, outcome: compliant.
+
+vlan_id: 111
+vlan_name: SALES
+vlan_action: create

@@ -1,0 +1,150 @@
+---
+# net_iosxe/vlan: role entry point.
+#
+# Lifecycle: validate -> gather -> evaluate -> apply (create only, when
+# required) -> verify (post-change only, real execution only) -> build
+# capability_result.
+#
+# This role produces capability_result but does not validate it against the
+# net_common contract. Cross-role composition belongs to the calling playbook.
+
+- name: "vlan: validate input"
+  ansible.builtin.include_tasks: validate.yml
+
+- name: "vlan: gather current state"
+  ansible.builtin.include_tasks: gather.yml
+
+- name: "vlan: evaluate current vs desired state"
+  ansible.builtin.include_tasks: evaluate.yml
+
+- name: "vlan: record previous state and default changed status"
+  ansible.builtin.set_fact:
+    vlan_previous_state: "{{ vlan_current | default({}) }}"
+    vlan_changed: false
+
+
+# ---------------------------------------------------------------------------
+# No-mutation paths
+# ---------------------------------------------------------------------------
+
+- name: "vlan: report compliant outcome for verify action"
+  ansible.builtin.set_fact:
+    vlan_verification: passed
+    vlan_final_outcome: compliant
+  when:
+    - vlan_action == 'verify'
+    - vlan_outcome == 'compliant'
+
+- name: "vlan: report compliant outcome for create action"
+  ansible.builtin.set_fact:
+    vlan_verification: passed
+    vlan_final_outcome: compliant
+  when:
+    - vlan_action == 'create'
+    - vlan_outcome == 'compliant'
+
+- name: "vlan: report noncompliant verify outcome without mutating the device"
+  ansible.builtin.set_fact:
+    vlan_verification: failed
+    vlan_final_outcome: noncompliant
+  when:
+    - vlan_action == 'verify'
+    - vlan_outcome in ['provisioning_required', 'remediation_required']
+
+
+# ---------------------------------------------------------------------------
+# Mutation path
+# ---------------------------------------------------------------------------
+
+- name: "vlan: apply changes for convergence"
+  ansible.builtin.include_tasks: apply.yml
+  when:
+    - vlan_action == 'create'
+    - vlan_outcome in ['provisioning_required', 'remediation_required']
+
+- name: "vlan: record changed status from the apply result"
+  ansible.builtin.set_fact:
+    vlan_changed: "{{ vlan_apply_result.changed | default(false) }}"
+  when:
+    - vlan_action == 'create'
+    - vlan_outcome in ['provisioning_required', 'remediation_required']
+
+# Post-change verification runs only after a real configuration attempt.
+# In check mode, ios_vlans predicts changes without mutating the device.
+- name: "vlan: verify resulting state after applying changes"
+  ansible.builtin.include_tasks: verify.yml
+  when:
+    - vlan_action == 'create'
+    - vlan_outcome in ['provisioning_required', 'remediation_required']
+    - not ansible_check_mode
+
+- name: "vlan: record provisioned outcome"
+  ansible.builtin.set_fact:
+    vlan_final_outcome: provisioned
+  when:
+    - vlan_action == 'create'
+    - vlan_outcome == 'provisioning_required'
+    - not ansible_check_mode
+
+- name: "vlan: record remediated outcome"
+  ansible.builtin.set_fact:
+    vlan_final_outcome: remediated
+  when:
+    - vlan_action == 'create'
+    - vlan_outcome == 'remediation_required'
+    - not ansible_check_mode
+
+
+# ---------------------------------------------------------------------------
+# Check mode
+# ---------------------------------------------------------------------------
+
+# No real device change occurs in check mode, so post-change verification
+# is not attempted.
+#
+# TODO(vlan.md): define the final capability outcome for a predicted change
+# before assigning vlan_final_outcome here.
+- name: "vlan: report predicted change in check mode without mutating the device"
+  ansible.builtin.set_fact:
+    vlan_verification: not_attempted
+  when:
+    - vlan_action == 'create'
+    - vlan_outcome in ['provisioning_required', 'remediation_required']
+    - ansible_check_mode
+
+
+# ---------------------------------------------------------------------------
+# Result
+# ---------------------------------------------------------------------------
+
+- name: "vlan: build base capability_result"
+  ansible.builtin.set_fact:
+    capability_result:
+      host: "{{ inventory_hostname }}"
+      capability: vlan_management
+      status: "{{ 'changed' if vlan_changed else 'ok' }}"
+      execution_mode: "{{ 'check' if ansible_check_mode else 'apply' }}"
+      verification: "{{ vlan_verification }}"
+      timestamp: "{{ now(utc=true).strftime('%Y-%m-%dT%H:%M:%SZ') }}"
+      warnings: []
+      errors: []
+      requested_action: "{{ vlan_action }}"
+      previous_state: "{{ vlan_previous_state }}"
+
+- name: "vlan: add outcome to capability_result when determined"
+  ansible.builtin.set_fact:
+    capability_result: >-
+      {{
+        capability_result
+        | combine({'outcome': vlan_final_outcome})
+      }}
+  when: vlan_final_outcome is defined
+
+- name: "vlan: add resulting_state when post-change verification occurred"
+  ansible.builtin.set_fact:
+    capability_result: >-
+      {{
+        capability_result
+        | combine({'resulting_state': vlan_resulting})
+      }}
+  when: vlan_resulting is defined

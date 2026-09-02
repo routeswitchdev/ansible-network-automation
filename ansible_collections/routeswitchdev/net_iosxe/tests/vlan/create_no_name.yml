@@ -1,0 +1,12 @@
+---
+# Scenario: create a VLAN that does not yet exist, without a name.
+#
+# Precondition: VLAN 100 must not already exist on the target device.
+#
+# Expected behavior:
+#   - VLAN 100 is created.
+#   - vlan_name is left unmanaged; platform-assigned/default name is accepted.
+#   - status: changed, verification: passed, outcome: provisioned.
+
+vlan_id: 100
+vlan_action: create

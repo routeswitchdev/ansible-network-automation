@@ -1,0 +1,45 @@
+---
+# net_iosxe/vlan: input validation.
+#
+# argument_specs.yml already enforces required fields, types, and the vlan_action choice list.
+# This file validates everything argument_specs cannot express: numeric ranges, protected/reserved IDs, and name length.
+# No device state is gathered or contacted here.
+
+- name: "vlan: reject delete action (not yet implemented)"
+  ansible.builtin.fail:
+    msg: >-
+      vlan_action 'delete' is not yet implemented by this role.
+      Supported actions: create, verify.
+  when: vlan_action == 'delete'
+
+- name: "vlan: reject out-of-range vlan_id"
+  ansible.builtin.fail:
+    msg: >-
+      vlan_id must be between {{ vlan_id_min }} and {{ vlan_id_max }};
+      got {{ vlan_id }}.
+  when: vlan_id < vlan_id_min or vlan_id > vlan_id_max
+
+- name: "vlan: reject protected or reserved vlan_id"
+  ansible.builtin.fail:
+    msg: >-
+      vlan_id {{ vlan_id }} is protected or reserved and cannot be managed
+      by this role.
+  when: vlan_id in vlan_protected_reserved_ids
+
+- name: "vlan: reject invalid vlan_name length"
+  ansible.builtin.fail:
+    msg: >-
+      vlan_name must be between 1 and 32 characters when provided;
+      got {{ vlan_name | length }} characters.
+  when:
+    - vlan_name is defined
+    - (vlan_name | length < 1) or (vlan_name | length > 32)
+
+- name: "vlan: reject invalid vlan_name characters"
+  ansible.builtin.fail:
+    msg: >-
+      vlan_name must contain only letters, numbers, hyphens, and
+      underscores ({{ vlan_name_pattern }}); got '{{ vlan_name }}'.
+  when:
+    - vlan_name is defined
+    - vlan_name is not regex(vlan_name_pattern)

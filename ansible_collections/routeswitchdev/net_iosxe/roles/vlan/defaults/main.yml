@@ -13,3 +13,5 @@ vlan_protected_reserved_ids:
 
 vlan_id_min: 1
 vlan_id_max: 4094
+
+vlan_name_pattern: '^[A-Za-z0-9_-]+$'

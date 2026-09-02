@@ -1,0 +1,10 @@
+---
+# Scenario: vlan_id in the Cisco-reserved legacy range (1002-1005).
+# vlan_id 1002 is used as the representative case.
+#
+# Expected behavior:
+#   - Rejected by tasks/validate.yml's protected/reserved-ID check.
+#   - No device configuration change is made.
+
+vlan_id: 1002
+vlan_action: create

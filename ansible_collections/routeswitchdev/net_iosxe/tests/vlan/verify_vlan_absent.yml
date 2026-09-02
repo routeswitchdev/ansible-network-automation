@@ -1,0 +1,13 @@
+---
+# Scenario: 'verify' requested for a VLAN that does not exist on the
+# target device.
+#
+# Precondition: VLAN 999 must not exist on the target device.
+#
+# Expected behavior:
+#   - No configuration change is made.
+#   - The host is NOT failed.
+#   - status: ok, verification: failed, outcome: noncompliant.
+
+vlan_id: 999
+vlan_action: verify

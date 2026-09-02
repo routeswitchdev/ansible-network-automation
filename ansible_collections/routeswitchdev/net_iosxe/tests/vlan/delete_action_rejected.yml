@@ -1,0 +1,15 @@
+---
+# Scenario: vlan_action: delete is requested.
+#
+# 'delete' remains a valid choice in meta/argument_specs.yml, preserving
+# the vlan_action public interface per vlan.md, but this role does not yet
+# implement VLAN removal.
+#
+# Expected behavior:
+#   - Rejected by tasks/validate.yml's first task, with an explicit
+#     "not yet implemented" message naming the supported actions
+#     (create, verify).
+#   - No device is contacted; no removal is attempted.
+
+vlan_id: 100
+vlan_action: delete

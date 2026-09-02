@@ -1,0 +1,10 @@
+---
+# Scenario: vlan_id is above the supported range.
+#
+# Expected behavior:
+#   - Rejected by tasks/validate.yml's out-of-range check
+#     (vlan_id_max = 4094).
+#   - No device configuration change is made.
+
+vlan_id: 4200
+vlan_action: create

@@ -1,0 +1,12 @@
+---
+# Scenario: vlan_name contains characters outside the allowed set
+# (letters, numbers, hyphen, underscore - vlan_name_pattern in
+# defaults/main.yml).
+#
+# Expected behavior:
+#   - Rejected by tasks/validate.yml's character-restriction check.
+#   - No device configuration change is made.
+
+vlan_id: 100
+vlan_name: "Sales Team!"
+vlan_action: create

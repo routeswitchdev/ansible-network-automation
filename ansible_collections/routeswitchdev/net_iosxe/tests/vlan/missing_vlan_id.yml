@@ -1,0 +1,9 @@
+---
+# Scenario: vlan_id is omitted entirely.
+#
+# Expected behavior:
+#   - Rejected by meta/argument_specs.yml before any task runs
+#     ('vlan_id' is a required option).
+#   - No device is contacted.
+
+vlan_action: create

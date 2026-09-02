@@ -1,0 +1,10 @@
+---
+# Scenario: vlan_action is not one of the supported values.
+#
+# Expected behavior:
+#   - Rejected by meta/argument_specs.yml (choices: create, delete, verify)
+#     before any task runs.
+#   - No device is contacted.
+
+vlan_id: 100
+vlan_action: disable

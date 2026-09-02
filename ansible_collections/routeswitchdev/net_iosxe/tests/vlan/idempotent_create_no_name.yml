@@ -1,0 +1,16 @@
+---
+# Scenario: idempotency for an unnamed VLAN create.
+#
+# This is a two-run test against the same host with the same extra-vars:
+#   1. First run converges the device: VLAN 200 is created if it does not
+#      already exist (status: changed, outcome: provisioned), or reports
+#      compliant if it already did (status: ok, outcome: compliant).
+#   2. Second run is the actual test point. It must report:
+#        - no configuration change
+#        - status: ok
+#        - changed: false
+#        - verification: passed
+#        - outcome: compliant
+
+vlan_id: 200
+vlan_action: create

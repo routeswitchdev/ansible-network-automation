@@ -1,0 +1,21 @@
+---
+# net_iosxe/vlan: gather current device state.
+#
+# Only VLAN state is gathered here. Interface, trunk, and SVI state are
+# outside the scope of the currently supported actions.
+
+- name: "vlan: gather current VLAN configuration"
+  cisco.ios.ios_vlans:
+    state: gathered
+  register: vlan_gathered_result
+
+- name: "vlan: extract current VLAN entry for the requested vlan_id"
+  ansible.builtin.set_fact:
+    vlan_current: >-
+      {{
+        vlan_gathered_result.gathered
+        | selectattr('vlan_id', 'equalto', vlan_id)
+        | list
+        | first
+        | default(none)
+      }}

@@ -1,0 +1,14 @@
+---
+# Scenario: 'create' requested for a VLAN that already exists, with a
+# vlan_name that differs from its current name.
+#
+# Precondition: VLAN 112 must already exist with a name other than
+# MARKETING (e.g. ENGINEERING). Create it independently first if needed.
+#
+# Expected behavior:
+#   - The VLAN name is updated to MARKETING; nothing else changes.
+#   - status: changed, verification: passed, outcome: remediated.
+
+vlan_id: 112
+vlan_name: MARKETING
+vlan_action: create

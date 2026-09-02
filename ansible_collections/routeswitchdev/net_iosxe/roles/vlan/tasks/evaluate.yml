@@ -1,0 +1,43 @@
+---
+# net_iosxe/vlan: evaluate current state against requested state.
+#
+# Both 'create' and 'verify' evaluate the same desired state:
+#   - The requested VLAN must exist.
+#   - If vlan_name is provided, the VLAN name must match it.
+#   - If vlan_name is omitted, the existing VLAN name is ignored and any
+#     platform-assigned name is accepted.
+#
+# This file only determines whether the requested state is already satisfied
+# or whether provisioning/remediation is required. It does not make changes.
+#
+# Action handled later:
+#   - 'create' may apply changes when required.
+#   - 'verify' reports the evaluation result without changing the device
+
+- name: "vlan: evaluate outcome when VLAN does not exist"
+  ansible.builtin.set_fact:
+    vlan_outcome: provisioning_required
+  when: vlan_current is none
+
+- name: "vlan: evaluate outcome when VLAN exists and name is unmanaged"
+  ansible.builtin.set_fact:
+    vlan_outcome: compliant
+  when:
+    - vlan_current is not none
+    - vlan_name is not defined
+
+- name: "vlan: evaluate outcome when VLAN exists and name matches"
+  ansible.builtin.set_fact:
+    vlan_outcome: compliant
+  when:
+    - vlan_current is not none
+    - vlan_name is defined
+    - vlan_current.name == vlan_name
+
+- name: "vlan: evaluate outcome when VLAN exists and name differs"
+  ansible.builtin.set_fact:
+    vlan_outcome: remediation_required
+  when:
+    - vlan_current is not none
+    - vlan_name is defined
+    - vlan_current.name != vlan_name

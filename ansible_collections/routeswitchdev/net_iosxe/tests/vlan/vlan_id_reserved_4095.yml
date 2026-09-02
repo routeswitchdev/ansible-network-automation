@@ -1,0 +1,14 @@
+---
+# Scenario: vlan_id 4095 (reserved, not configurable).
+#
+# vlan_id_max is 4094, so 4095 is out of the supported range regardless of
+# also being on the reserved list - this fixture does not assert which
+# specific validate.yml task rejects it, only that it must be rejected
+# before any configuration change is made.
+#
+# Expected behavior:
+#   - Rejected during validation.
+#   - No device configuration change is made.
+
+vlan_id: 4095
+vlan_action: create

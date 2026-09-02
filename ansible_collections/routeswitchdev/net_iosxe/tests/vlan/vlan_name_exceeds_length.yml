@@ -1,0 +1,10 @@
+---
+# Scenario: vlan_name is longer than 32 characters.
+#
+# Expected behavior:
+#   - Rejected by tasks/validate.yml's name-length check.
+#   - No device configuration change is made.
+
+vlan_id: 100
+vlan_name: "THIS_VLAN_NAME_IS_DEFINITELY_WAY_TOO_LONG"
+vlan_action: create

@@ -1,0 +1,34 @@
+---
+# net_iosxe/vlan: apply changes required for convergence.
+#
+# This file is used only for vlan_action == 'create' after evaluation
+# determines that configuration changes are required.
+#
+# If vlan_name is omitted, the VLAN name is unmanaged and is therefore
+# excluded entirely from the ios_vlans config.
+#
+# state: merged is used so the role changes only the VLAN attributes it
+# explicitly manages and preserves attributes outside the role's ownership.
+
+- name: "vlan: create VLAN (no name managed)"
+  cisco.ios.ios_vlans:
+    config:
+      - vlan_id: "{{ vlan_id }}"
+    state: merged
+  register: vlan_apply_result
+  when:
+    - vlan_action == 'create'
+    - vlan_outcome == 'provisioning_required'
+    - vlan_name is not defined
+
+- name: "vlan: create or rename VLAN with managed name"
+  cisco.ios.ios_vlans:
+    config:
+      - vlan_id: "{{ vlan_id }}"
+        name: "{{ vlan_name }}"
+    state: merged
+  register: vlan_apply_result
+  when:
+    - vlan_action == 'create'
+    - vlan_outcome in ['provisioning_required', 'remediation_required']
+    - vlan_name is defined
