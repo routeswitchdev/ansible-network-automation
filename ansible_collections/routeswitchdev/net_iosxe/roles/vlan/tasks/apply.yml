@@ -9,13 +9,22 @@
 #
 # state: merged is used so the role changes only the VLAN attributes it
 # explicitly manages and preserves attributes outside the role's ownership.
+#
+# cisco.ios.ios_vlans (3.3.2) never emits a command from vlan_id alone -
+# its diff logic only acts on name/state/mtu/remote_span/shutdown. A
+# vlan_id-only config with everything else omitted produces zero commands,
+# which would silently fail to create the VLAN at all. state: active is
+# passed explicitly here so the module has an attribute to act on - it is
+# the VLAN's own default state on creation, not an additional attribute
+# this role is taking ownership of.
 
 - name: "vlan: create VLAN (no name managed)"
   cisco.ios.ios_vlans:
     config:
       - vlan_id: "{{ vlan_id }}"
+        state: active
     state: merged
-  register: vlan_apply_result
+  register: vlan_apply_no_name_result
   when:
     - vlan_action == 'create'
     - vlan_outcome == 'provisioning_required'
@@ -27,7 +36,7 @@
       - vlan_id: "{{ vlan_id }}"
         name: "{{ vlan_name }}"
     state: merged
-  register: vlan_apply_result
+  register: vlan_apply_named_result
   when:
     - vlan_action == 'create'
     - vlan_outcome in ['provisioning_required', 'remediation_required']

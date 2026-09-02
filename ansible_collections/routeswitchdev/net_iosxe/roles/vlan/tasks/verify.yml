@@ -10,16 +10,24 @@
     state: gathered
   register: vlan_reverify_gathered_result
 
-- name: "vlan: extract resulting VLAN entry for the requested vlan_id"
+- name: "vlan: find matching VLAN entries for the requested vlan_id after apply"
   ansible.builtin.set_fact:
-    vlan_resulting: >-
+    vlan_resulting_matches: >-
       {{
         vlan_reverify_gathered_result.gathered
         | selectattr('vlan_id', 'equalto', vlan_id)
         | list
-        | first
-        | default(none)
       }}
+
+- name: "vlan: set resulting VLAN entry when it exists"
+  ansible.builtin.set_fact:
+    vlan_resulting: "{{ vlan_resulting_matches[0] }}"
+  when: vlan_resulting_matches | length > 0
+
+- name: "vlan: set resulting VLAN entry to none when it does not exist"
+  ansible.builtin.set_fact:
+    vlan_resulting: ~
+  when: vlan_resulting_matches | length == 0
 
 - name: "vlan: initialize post-change verification result"
   ansible.builtin.set_fact:

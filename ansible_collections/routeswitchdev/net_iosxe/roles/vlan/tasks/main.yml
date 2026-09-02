@@ -19,7 +19,7 @@
 
 - name: "vlan: record previous state and default changed status"
   ansible.builtin.set_fact:
-    vlan_previous_state: "{{ vlan_current | default({}) }}"
+    vlan_previous_state: "{{ vlan_current | default({}, true) }}"
     vlan_changed: false
 
 
@@ -64,7 +64,11 @@
 
 - name: "vlan: record changed status from the apply result"
   ansible.builtin.set_fact:
-    vlan_changed: "{{ vlan_apply_result.changed | default(false) }}"
+    vlan_changed: >-
+      {{
+        (vlan_apply_no_name_result.changed | default(false))
+        or (vlan_apply_named_result.changed | default(false))
+      }}
   when:
     - vlan_action == 'create'
     - vlan_outcome in ['provisioning_required', 'remediation_required']
