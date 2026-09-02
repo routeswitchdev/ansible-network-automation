@@ -43,6 +43,9 @@ htmlcov/
 *.retry
 *.fact
 
+# Local Ansible dependencies and runtime artifacts
+.ansible/
+
 # Locally installed Ansible collections
 collections/ansible_collections/
 ansible_collections/cisco/
