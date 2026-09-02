@@ -137,6 +137,7 @@ ansible_collections/routeswitchdev/net_common/tests/result_contract/test_validat
 ### Run the Tests
 
 From the collection root:
+- inventory param not needed for this test
 
 ```bash
 uv run ansible-playbook tests/result_contract/test_validate_result_contract.yml
