@@ -1,0 +1,12 @@
+---
+- name: VLAN management
+  hosts: cisco_ios_switches
+  gather_facts: false
+
+  roles:
+    - routeswitchdev.net_iosxe.vlan
+
+  post_tasks:
+    - name: "vlan: expose capability_result"
+      ansible.builtin.debug:
+        var: capability_result
