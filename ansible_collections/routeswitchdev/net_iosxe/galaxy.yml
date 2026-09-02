@@ -1,0 +1,25 @@
+---
+namespace: routeswitchdev
+name: net_iosxe
+version: 1.0.0
+
+readme: README.md
+
+authors:
+  - Daniel Arapi
+
+description: Cisco IOS and IOS-XE network automation collection.
+
+license:
+  - Apache-2.0
+
+tags:
+  - cisco
+  - ios
+  - iosxe
+  - networking
+  - automation
+
+dependencies: {}
+
+repository: https://github.com/routeswitchdev/ansible-network-automation
