@@ -5,15 +5,15 @@ readme = "README.md"
 authors = [
     { name = "Daniel Arapi" }
 ]
-requires-python = ">=3.8"
+requires-python = ">=3.8,<3.9"
 dependencies = [
-    "ansible-core>=2.13.7",
-    # ansible-pylibssh >=1.4.0 requires Python >=3.9. On 3.8, pin to the last
-    # version that supports it and let network_cli fall back to the paramiko
-    # SSH backend instead, per inventory/group_vars/cisco_ios_switches/main.yml's
+    "ansible-core==2.13.7",
+    # ansible-pylibssh >=1.4.0 requires Python >=3.9, which this project does
+    # not target (see requires-python above) - pinned below 1.4.0 so
+    # network_cli falls back to the paramiko SSH backend instead, per
+    # inventory/group_vars/cisco_ios_switches/main.yml's
     # ansible_network_cli_ssh_type (not yet present in this repo).
-    "ansible-pylibssh>=1.2.2,<1.4.0; python_version < '3.9'",
-    "ansible-pylibssh>=1.4.0; python_version >= '3.9'",
+    "ansible-pylibssh>=1.2.2,<1.4.0",
     "paramiko==2.12.0",
     "jinja2<3.1"
 ]
