@@ -1,0 +1,37 @@
+---
+# Defines the public input contract for the VLAN role.
+# Specifies:
+# - which variables the role accepts
+# - their expected data types
+# - whether they are required
+# - any basic allowed values
+
+argument_specs:
+  main:
+    short_description: >-
+      Manage VLAN existence and name on Cisco IOS-XE devices.
+    options:
+      vlan_id:
+        type: int
+        required: true
+        description: >-
+          VLAN ID to manage. Reserved/protected IDs (0, 1, 1002-1005, 4095)
+          and out-of-range values are rejected during validation.
+      vlan_name:
+        type: str
+        required: false
+        description: >-
+          Desired VLAN name. Omit to leave an existing VLAN's name unmanaged,
+          or to accept the platform-assigned name when creating.
+      vlan_action:
+        type: str
+        required: true
+        choices:
+          - create
+          - delete
+          - verify
+        description: >-
+          Requested action. 'create' means desired state present. 'delete'
+          means desired state absent (not yet implemented by this role,
+          rejected during validation). 'verify' validates, gathers, and
+          evaluates without applying configuration changes.
