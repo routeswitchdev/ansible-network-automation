@@ -11,22 +11,54 @@
 # mode == 'trunk' - live testing showed mode is only reported when
 # explicitly configured with `switchport mode trunk`; an interface can be
 # operating as a trunk (allowed_vlans populated) without it.
+#
+# Access membership is the mirror-image problem: cisco.ios.ios_l2_interfaces
+# 'merged' state never clears an old `switchport access vlan` line when an
+# interface is later reconfigured to trunk mode, so a stale access.vlan can
+# still appear in gathered facts for an interface that is now actually a
+# trunk (confirmed live: an interface with mode: trunk retained its
+# previous access.vlan). An access dependency is therefore only counted
+# when mode is NOT explicitly 'trunk' - covering both a bare access.vlan
+# with no mode line (normal, valid access config) and an explicit
+# mode: access.
 
 - name: "vlan: gather Layer 2 interface configuration"
   cisco.ios.ios_l2_interfaces:
     state: gathered
   register: vlan_l2_gathered_result
 
-- name: "vlan: find access interfaces assigned to the requested vlan_id"
+- name: "vlan: find access interfaces assigned to the requested vlan_id, mode unset"
   ansible.builtin.set_fact:
-    vlan_access_dependency_names: >-
+    vlan_access_dependency_names_unset_mode: >-
       {{
         vlan_l2_gathered_result.gathered
         | selectattr('access', 'defined')
         | selectattr('access.vlan', 'defined')
         | selectattr('access.vlan', 'equalto', vlan_id)
+        | rejectattr('mode', 'defined')
         | map(attribute='name')
         | list
+      }}
+
+- name: "vlan: find access interfaces assigned to the requested vlan_id, mode access"
+  ansible.builtin.set_fact:
+    vlan_access_dependency_names_explicit_mode: >-
+      {{
+        vlan_l2_gathered_result.gathered
+        | selectattr('access', 'defined')
+        | selectattr('access.vlan', 'defined')
+        | selectattr('access.vlan', 'equalto', vlan_id)
+        | selectattr('mode', 'defined')
+        | selectattr('mode', 'equalto', 'access')
+        | map(attribute='name')
+        | list
+      }}
+
+- name: "vlan: combine access dependency findings"
+  ansible.builtin.set_fact:
+    vlan_access_dependency_names: >-
+      {{
+        vlan_access_dependency_names_unset_mode + vlan_access_dependency_names_explicit_mode
       }}
 
 - name: "vlan: reset trunk dependency accumulator"

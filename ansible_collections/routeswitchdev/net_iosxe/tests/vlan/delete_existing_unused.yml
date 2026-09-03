@@ -1,0 +1,15 @@
+---
+# Scenario: delete an existing VLAN with no access-port or trunk
+# dependency.
+#
+# Precondition: VLAN 700 must already exist on the target device, with no
+# access interface or trunk carrying it. Create it independently first if
+# needed.
+#
+# Expected behavior:
+#   - VLAN 700 is deleted.
+#   - status: changed, verification: passed, outcome: removed.
+#   - resulting_state: {} (confirmed absence).
+
+vlan_id: 700
+vlan_action: delete

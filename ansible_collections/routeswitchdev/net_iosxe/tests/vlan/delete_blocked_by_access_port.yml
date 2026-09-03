@@ -1,0 +1,20 @@
+---
+# Scenario: attempt to delete a VLAN that is assigned as an access
+# interface's access VLAN.
+#
+# Precondition: this fixture is lab-topology-specific, not generically
+# portable. It targets VLAN 112, which in this lab is assigned as the
+# access VLAN on a dedicated interface (Ethernet0/2 on iol-l2,
+# GigabitEthernet1/0/2 on cat9000v). The vlan role never creates or
+# modifies interface configuration, so this dependency must be configured
+# on the device independently before running this fixture - it cannot
+# bootstrap its own precondition the way the provisioning fixtures do.
+#
+# Expected behavior:
+#   - No configuration change is made. Deletion is aborted.
+#   - status: ok, changed: false, verification: not_attempted,
+#     outcome: blocked.
+#   - warnings names the blocking access interface.
+
+vlan_id: 112
+vlan_action: delete

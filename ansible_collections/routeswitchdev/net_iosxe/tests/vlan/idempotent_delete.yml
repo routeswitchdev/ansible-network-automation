@@ -1,0 +1,18 @@
+---
+# Scenario: idempotency for VLAN deletion.
+#
+# Two-run test against the same host with the same extra-vars:
+#   1. First run converges the device: VLAN 702 is deleted if it exists
+#      (status: changed, outcome: removed), or reports compliant if it
+#      was already absent (status: ok, outcome: compliant).
+#      Precondition: VLAN 702 must exist before this run, with no
+#      access-port or trunk dependency. Create it independently first.
+#   2. Second run is the actual test point. It must report:
+#        - no configuration change
+#        - status: ok
+#        - changed: false
+#        - verification: passed
+#        - outcome: compliant
+
+vlan_id: 702
+vlan_action: delete

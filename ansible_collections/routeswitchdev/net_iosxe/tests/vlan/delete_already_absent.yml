@@ -1,0 +1,11 @@
+---
+# Scenario: delete a VLAN that does not exist on the target device.
+#
+# Precondition: VLAN 701 must not exist on the target device.
+#
+# Expected behavior:
+#   - No configuration change is made.
+#   - status: ok, changed: false, verification: passed, outcome: compliant.
+
+vlan_id: 701
+vlan_action: delete

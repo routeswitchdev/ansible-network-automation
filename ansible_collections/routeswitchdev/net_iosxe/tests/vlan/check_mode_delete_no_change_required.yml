@@ -1,0 +1,17 @@
+---
+# Scenario: check-mode run where the VLAN is already absent, so no
+# deletion would be required.
+#
+# Precondition: VLAN 704 must not exist on the target device.
+#
+# Run with --check together with
+# --extra-vars @check_mode_delete_no_change_required.yml
+#
+# Expected behavior:
+#   - No configuration change is made (none would be needed regardless of
+#     check mode).
+#   - status: ok, changed: false, execution_mode: check,
+#     verification: passed, outcome: compliant.
+
+vlan_id: 704
+vlan_action: delete

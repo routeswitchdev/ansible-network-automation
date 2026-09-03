@@ -1,0 +1,17 @@
+---
+# Scenario: check-mode run where a deletion would be required.
+#
+# Precondition: VLAN 703 must already exist on the target device, with no
+# access-port or trunk dependency. Create it independently first.
+#
+# Run with --check together with --extra-vars @check_mode_delete_required.yml
+#
+# Expected behavior:
+#   - No configuration change is made to the device.
+#   - status: changed (predicted), execution_mode: check,
+#     verification: not_attempted.
+#   - capability_result.outcome is intentionally omitted for a predicted
+#     change - see the Check Mode section of vlan.md.
+
+vlan_id: 703
+vlan_action: delete
