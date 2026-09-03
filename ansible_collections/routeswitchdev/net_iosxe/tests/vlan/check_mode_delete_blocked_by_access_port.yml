@@ -1,0 +1,24 @@
+---
+# Scenario: check-mode deletion attempt against a VLAN that is assigned as
+# an access interface's access VLAN.
+#
+# Precondition: this fixture is lab-topology-specific, not generically
+# portable. It targets VLAN 112, which in this lab is assigned as the
+# access VLAN on a dedicated interface (Ethernet0/2 on iol-l2,
+# GigabitEthernet1/0/2 on cat9000v). The vlan role never creates or
+# modifies interface configuration, so this dependency must be configured
+# on the device independently before running this fixture.
+#
+# Run with --check together with
+# --extra-vars @check_mode_delete_blocked_by_access_port.yml
+#
+# Expected behavior:
+#   - No configuration change is made, in check mode or otherwise -
+#     dependency evaluation is read-only and produces the same blocked
+#     result regardless of ansible_check_mode.
+#   - status: ok, changed: false, verification: not_attempted,
+#     outcome: blocked.
+#   - warnings names the blocking access interface.
+
+vlan_id: 112
+vlan_action: delete

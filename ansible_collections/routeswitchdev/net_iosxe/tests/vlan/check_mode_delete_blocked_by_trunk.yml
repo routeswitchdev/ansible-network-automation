@@ -1,0 +1,24 @@
+---
+# Scenario: check-mode deletion attempt against a VLAN that a trunk
+# interface's allowed-VLAN list carries.
+#
+# Precondition: this fixture is lab-topology-specific, not generically
+# portable. It targets VLAN 100, which in this lab is carried by a trunk
+# interface's allowed-VLAN list (Ethernet0/1 on iol-l2,
+# GigabitEthernet1/0/1 on cat9000v). The vlan role never creates or
+# modifies interface configuration, so this dependency must be configured
+# on the device independently before running this fixture.
+#
+# Run with --check together with
+# --extra-vars @check_mode_delete_blocked_by_trunk.yml
+#
+# Expected behavior:
+#   - No configuration change is made, in check mode or otherwise -
+#     dependency evaluation is read-only and produces the same blocked
+#     result regardless of ansible_check_mode.
+#   - status: ok, changed: false, verification: not_attempted,
+#     outcome: blocked.
+#   - warnings names the blocking trunk interface.
+
+vlan_id: 100
+vlan_action: delete
