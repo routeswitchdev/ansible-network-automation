@@ -4,13 +4,11 @@ Net_Iosxe provides capability roles for managing Cisco IOS and IOS-XE devices.
 
 Net_Iosxe owns platform-specific automation logic. It reports results using the shared contract defined by `net_common`.
 
-
 ## VLAN Management
 
 The `vlan` role manages VLAN existence and VLAN name on Cisco IOS-XE devices.
 
-Currently implemented: `create`, `delete`, and `verify`, including access-port and
-trunk deletion-dependency safety.
+Currently implemented: `create`, `delete`, and `verify`, including access-port and trunk deletion-dependency safety.
 
 Example:
 
@@ -26,19 +24,23 @@ Example:
     vlan_action: create
 ```
 
-
 ### Inputs
 
-| Key           | Description                                                                                                                           |
-|---------------|-----------------------------------------------------------------------------------------------------------------------------------------|
-| `vlan_id`     | Required. Integer VLAN ID to manage.                                                                                                    |
-| `vlan_name`   | Optional. Desired VLAN name. Omit to leave the VLAN name unmanaged.                                                                     |
-| `vlan_action` | Required. Must be `create`, `delete`, or `verify`.                                                                                      |
+| Key           | Required | Description                                                                              |
+| ------------- | -------- | ---------------------------------------------------------------------------------------- |
+| `vlan_id`     | Yes      | Integer VLAN ID to manage.                                                               |
+| `vlan_name`   | No       | Desired VLAN name. Omit to leave the VLAN name unmanaged and preserve the existing name. |
+| `vlan_action` | Yes      | Requested action: `create`, `delete`, or `verify`.                                       |
 
-`create` means the desired VLAN state is present. `delete` means the desired VLAN state is absent, and is blocked when the requested VLAN has a configured access-port or trunk dependency. `verify` validates, gathers, and evaluates without applying configuration changes.
+### Actions
 
-An omitted `vlan_name` is never treated as an empty value or a request to reset the name. An existing VLAN's name is preserved and treated as unmanaged.
+| Action   | Behavior                                                                                                        |
+| -------- | --------------------------------------------------------------------------------------------------------------- |
+| `create` | Ensures the VLAN exists. Manages the VLAN name only when `vlan_name` is provided.                               |
+| `delete` | Ensures the VLAN is absent. Deletion is blocked when the VLAN has a configured access-port or trunk dependency. |
+| `verify` | Validates, gathers, and evaluates the requested state without applying configuration changes.                   |
 
+When `vlan_name` is omitted, the existing VLAN name is preserved and treated as unmanaged.
 
 ### VLAN ID Rules
 
@@ -49,44 +51,55 @@ An omitted `vlan_name` is never treated as an empty value or a request to reset 
 
 Reserved and protected IDs are rejected before any device is contacted.
 
-
 ### VLAN Name Rules
 
 * Must be a string between 1 and 32 characters, when provided.
-* Must match `^[A-Za-z0-9_-]+$` - letters, numbers, hyphens, and underscores only.
-* Must not already be in use by a different `vlan_id` on the target device. Cisco IOS requires VLAN names to be unique across the whole VLAN database; a conflicting name is rejected during evaluation, before any configuration is attempted.
+* Must match `^[A-Za-z0-9_-]+$`: letters, numbers, hyphens, and underscores only.
+* Must not already be in use by a different `vlan_id` on the target device.
+
+Cisco IOS requires VLAN names to be unique across the VLAN database. A conflicting name is rejected during evaluation before configuration is attempted.
 
 Invalid or conflicting names are rejected before configuration changes are made.
 
-
-### Lifecycle
+## Lifecycle
 
 The role follows the standard capability lifecycle:
 
-1. **Validate** - Reject invalid, out-of-range, protected, reserved, or malformed input. No device is contacted.
-2. **Gather** - Read the device's current VLAN table. For `delete`, when the VLAN exists, additionally gather access-port and trunk dependency state via `cisco.ios.ios_l2_interfaces`.
-3. **Evaluate** - Compare current state against requested state and classify the result as `compliant`, `provisioning_required`, `remediation_required`, `removal_required`, or `blocked`. Reject a requested name already claimed by a different VLAN (`create` only).
-4. **Apply** - For `create`/`delete`, when a change is required. Applies only the VLAN attributes the role owns; never applied when `blocked`.
-5. **Verify** - Re-gather state independently and confirm convergence. Runs only after a real configuration attempt outside check mode; a mismatch here fails the host, unless the re-gather itself cannot be completed after bounded retry, in which case the result is reported `unverified` instead.
+| Stage        | Behavior                                                                                                                                                                                                                                  |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Validate** | Reject invalid, out-of-range, protected, reserved, or malformed input. No device is contacted.                                                                                                                                            |
+| **Gather**   | Read the current VLAN table. For `delete`, when the VLAN exists, also gather access-port and trunk dependency state using `cisco.ios.ios_l2_interfaces`.                                                                                  |
+| **Evaluate** | Compare current state with requested state and classify the result as `compliant`, `provisioning_required`, `remediation_required`, `removal_required`, or `blocked`. For `create`, reject a requested name already used by another VLAN. |
+| **Apply**    | Apply required `create` or `delete` changes. Only VLAN attributes owned by the role are managed. No configuration is applied when `blocked`.                                                                                              |
+| **Verify**   | Re-gather state after a real configuration attempt and confirm convergence. A mismatch fails the host. If state cannot be gathered after bounded retry, report `unverified`.                                                              |
 
-`verify` as a requested action performs steps 1-3 only and never mutates the device. A `verify` action that discovers noncompliance is a successful observation, not an execution failure. A `blocked` deletion likewise never mutates the device - dependency evaluation is read-only.
+### Lifecycle Exceptions
 
+| Condition             | Behavior                                                                      |
+| --------------------- | ----------------------------------------------------------------------------- |
+| `verify` action       | Runs Validate, Gather, and Evaluate only. Never changes device configuration. |
+| Noncompliant `verify` | Reported as a successful observation, not an execution failure.               |
+| `blocked` deletion    | Never changes device configuration. Dependency evaluation is read-only.       |
+| Check mode            | Predicts behavior without applying configuration changes.                     |
 
-### Role Ownership
+## Role Ownership
 
 The role owns only:
 
 * VLAN existence for the requested `vlan_id`.
-* VLAN name, when `vlan_name` is explicitly provided.
+* VLAN name when `vlan_name` is explicitly provided.
 
-It does not own VLAN administrative state, MTU, or any other attribute. `cisco.ios.ios_vlans` (pinned at `3.3.2`) does not emit a configuration command from `vlan_id` alone, so `state: active` is supplied as a compatibility mechanism when creating an unnamed VLAN. This is an implementation detail for the pinned module version, not an expansion of role ownership, and does not apply to an already-existing VLAN.
+The role does not own VLAN administrative state, MTU, or other VLAN attributes.
 
+`cisco.ios.ios_vlans` pinned at `3.3.2` does not emit a configuration command from `vlan_id` alone, so `state: active` is supplied as a compatibility mechanism when creating an unnamed VLAN.
 
-### Result Contract
+This is an implementation detail for the pinned module version. It does not expand role ownership and does not apply to an already-existing VLAN.
 
-The role builds `capability_result` using the `net_common` result contract but does not validate it against that contract itself - see `Processing Order` below.
+## Result Contract
 
-Example, for a successful creation:
+The role reports results using `capability_result` as defined by `net_common`.
+
+Example for a successful creation:
 
 ```yaml
 capability_result:
@@ -109,41 +122,52 @@ capability_result:
     state: active
 ```
 
-`outcome` values currently produced:
+### Outcomes
 
-| Outcome        | Meaning                                                                 |
-|----------------|--------------------------------------------------------------------------|
-| `compliant`    | Requested state already satisfied. No configuration change made.        |
-| `noncompliant` | `verify` found the observed state does not satisfy requested intent.    |
-| `provisioned`  | VLAN did not exist and was created.                                     |
-| `remediated`   | VLAN existed with a different managed name, which was corrected.        |
-| `removed`      | VLAN existed and was deleted.                                           |
-| `blocked`      | Deletion prevented by a confirmed access-port or trunk dependency. `verification` is `not_attempted`; `warnings` names the blocking interface(s). |
-| `unverified`   | A mutation was attempted, but the post-change re-gather could not be completed even after bounded retry - the resulting state is genuinely unknown, not assumed successful or failed. |
+| Outcome        | Meaning                                                                                                                                                  |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `compliant`    | Requested state already satisfied. No configuration change made.                                                                                         |
+| `noncompliant` | `verify` found that observed state does not satisfy requested intent.                                                                                    |
+| `provisioned`  | VLAN did not exist and was created.                                                                                                                      |
+| `remediated`   | VLAN existed with a different managed name, which was corrected.                                                                                         |
+| `removed`      | VLAN existed and was deleted.                                                                                                                            |
+| `blocked`      | Deletion prevented by a confirmed access-port or trunk dependency. `verification` is `not_attempted`, and `warnings` identifies the blocking interfaces. |
+| `unverified`   | A mutation was attempted, but post-change state could not be gathered after bounded retry. The resulting state is unknown.                               |
 
-`resulting_state` is included only when a real post-change verification occurred (or, for a confirmed deletion, to represent confirmed absence as `{}`). It is omitted for a pure `verify` action, an already-compliant `create`, a `blocked` deletion, and an `unverified` result.
+`resulting_state` is included only when a real post-change verification occurred or, for a confirmed deletion, to represent confirmed absence as `{}`.
 
-**Check mode:** No real device change occurs. `status` reflects the predicted change, `verification` is `not_attempted`, and `outcome` is deliberately omitted - no existing outcome value fits a predicted-but-unapplied change without implying real convergence that did not happen (see `vlan.md`'s Check Mode section for the full reasoning). A `blocked` deletion reports the same in check mode as outside it, since dependency evaluation is read-only regardless of `ansible_check_mode`.
+It is omitted for:
 
+* A pure `verify` action.
+* An already-compliant `create`.
+* A `blocked` deletion.
+* An `unverified` result.
 
-### Processing Order
+### Check Mode
+
+No real device change occurs in check mode.
+
+`status` reflects the predicted change, `verification` is `not_attempted`, and `outcome` is omitted because no configuration change or convergence actually occurred.
+
+A `blocked` deletion reports the same result in check mode as outside check mode because dependency evaluation is read-only.
+
+## Processing Order
+
+The VLAN capability is processed in the following order:
 
 1. The role constructs `capability_result`.
 2. The calling playbook validates it against the `net_common` result contract.
 
-Validating `capability_result` is orchestration, not a role-to-role dependency, so it is not performed inside this role. See `playbooks/vlan.yml` for the reference invocation.
+Validating `capability_result` is orchestration, not a role-to-role dependency, so validation is not performed inside the VLAN role.
 
+See `playbooks/vlan.yml` for the reference invocation.
 
-## VLAN Test Coverage
+## VLAN Testing
 
-35 fixtures cover Provisioning (5), Verify (4), Removal (4), Input Validation (11),
-Idempotency (3), Check Mode (6), and Failure Handling (2 of 9). Each is a YAML
-`--extra-vars` input run against a real or lab device.
+The VLAN role has an independent test suite covering provisioning, verification, removal safety, input validation, idempotency, check mode, and failure handling.
 
-Not yet covered: 2 Removal "state cannot be determined" scenarios and 7 Failure Handling
-scenarios (authorization failure, connection loss, recovery/indeterminate timing) - these
-need a controlled connectivity-interruption test mechanism or lab infrastructure that
-doesn't exist yet, not just another fixture file.
+Tests use YAML `--extra-vars` fixtures against an IOS/IOS-XE lab or test device.
 
-See [`docs/testing.md`](../../../docs/testing.md) for the full fixture list, the detailed
-reason for each uncovered scenario, and run instructions.
+Some failure scenarios require controlled connectivity interruption or other lab conditions and remain deferred until a reliable integration-test mechanism is available.
+
+See [`docs/testing/vlan.md`](../../../docs/testing/vlan.md) for test coverage, fixtures, execution instructions, expected results, known coverage gaps, and peer-review procedures.

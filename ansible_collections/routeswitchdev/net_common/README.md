@@ -4,7 +4,6 @@ Common provides minimal, stable functionality shared across network automation c
 
 Common provides mechanisms and contracts, not network-domain policy.
 
-
 ## Result Contract
 
 Capabilities report per-host results to Common using `capability_result`.
@@ -28,7 +27,7 @@ capability_result:
 Every `capability_result` must contain:
 
 | Key              | Description                                                                                                                           |
-|------------------|---------------------------------------------------------------------------------------------------------------------------------------|
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
 | `host`           | Host the result represents.                                                                                                           |
 | `capability`     | Capability that produced the result.                                                                                                  |
 | `status`         | Common's normalized result for this host's capability execution. <br> Must be `ok`, `changed`, `failed`, `unreachable`, or `skipped`. |
@@ -38,20 +37,18 @@ Every `capability_result` must contain:
 | `warnings`       | List of warning strings.                                                                                                              |
 | `errors`         | List of error strings.                                                                                                                |
 
-
 ### Optional Fields
 
 A `capability_result` may also contain:
 
 | Key                | Description                                                                                                          |
-|--------------------|----------------------------------------------------------------------------------------------------------------------|
+| ------------------ | -------------------------------------------------------------------------------------------------------------------- |
 | `requested_action` | Action requested by the capability consumer, such as `create`, `delete`, or `verify`.                                |
 | `outcome`          | Capability-specific result, such as `compliant`, `provisioned`, `remediated`, `removed`, `blocked`, or `unverified`. |
 | `previous_state`   | Relevant capability-managed state before execution.                                                                  |
 | `resulting_state`  | Relevant capability-managed state after execution.                                                                   |
 
 These fields are optional. When supplied, they must conform to the Common result contract.
-
 
 ## Contract Validation
 
@@ -74,8 +71,6 @@ Validation currently checks:
 
 Additional field validation will be added as the contract is implemented.
 
-
-
 ## Evidence Schema
 
 The evidence artifact contract is versioned using:
@@ -87,7 +82,6 @@ common_schema_version: "1.0"
 The schema version applies to the complete evidence artifact, not individual per-host results.
 
 Increment the version only when an incompatible structural or semantic change is made to the evidence contract.
-
 
 ## Processing Order
 
@@ -101,12 +95,10 @@ Common processes each `capability_result` in the following order:
 
 Only contract validation is currently implemented. Later processing stages should not be assumed to exist until implemented.
 
-
 ## Result Contract Testing
 
-The Common result contract has an independent, 15-case test suite covering both valid and
-invalid `capability_result` structures. It runs entirely on `localhost` - no network
-inventory or device connectivity required - and currently passes in full.
+The Common result contract has an independent test suite covering valid and invalid `capability_result` structures.
 
-See [`docs/testing.md`](../../../docs/testing.md) for the full test list, location, and
-run instructions.
+The tests run entirely on `localhost` and do not require network inventory or device connectivity.
+
+See [`docs/testing/net_common.md`](../../../docs/testing/net_common.md) for test coverage, execution instructions, expected results, and peer-review procedures.

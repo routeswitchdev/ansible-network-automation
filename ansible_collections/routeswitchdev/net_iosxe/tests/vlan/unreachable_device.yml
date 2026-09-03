@@ -11,12 +11,17 @@
 #   -l iol-l2 --extra-vars @unreachable_device.yml
 #
 # Expected behavior:
-#   - Ansible reports the host as unreachable (not failed), once the
-#     persistent-connection timeout settings in ansible.cfg are exhausted.
+#   - The connection attempt fails once the persistent-connection timeout
+#     settings in ansible.cfg are exhausted. Live-verified: this surfaces
+#     as Ansible's ordinary failed status, not the dedicated unreachable
+#     status - see vlan.md's Connection Failures section for why (the
+#     pinned ansible.netcommon collection's dexec execution path collapses
+#     the underlying AnsibleConnectionFailure exception into plain result
+#     text before Ansible's executor can classify it as unreachable).
 #   - No configuration change is made; capability_result is never
 #     constructed.
-#   - An unreachable host must not be reported as successfully changed or
-#     converged.
+#   - A connection failure must never be reported as successfully changed
+#     or converged.
 #   - In a multi-host run, unaffected hosts continue processing normally.
 
 vlan_id: 100

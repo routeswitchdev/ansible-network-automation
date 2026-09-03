@@ -2,40 +2,29 @@
 
 Ansible-based network automation repository containing reusable collections, roles, playbooks, and supporting tooling for managing network infrastructure.
 
-The repository is organized around two principles:
+The repository follows two primary principles:
 
 * **Collections** define platform or shared automation boundaries.
 * **Roles** define individual automation capabilities.
 
 ## Documentation Map
 
-| I want to...                                | Refer to                                                                             |
-|----------------------------------------------|---------------------------------------------------------------------------------------|
-| Understand the project, collections, and capabilities | `README.md` (this file)                                                    |
-| See what's implemented vs. deferred/future    | `README.md` - Implementation Status and Future Scope, below                          |
-| Understand `net_common`                       | [`ansible_collections/routeswitchdev/net_common/README.md`](ansible_collections/routeswitchdev/net_common/README.md) |
-| Understand the `vlan` role                    | [`ansible_collections/routeswitchdev/net_iosxe/README.md`](ansible_collections/routeswitchdev/net_iosxe/README.md)   |
-| Run or review tests                           | [`docs/testing.md`](docs/testing.md)                                                 |
+| I want to...                                          | Refer to                                                                                                             |
+| ----------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| Understand the project, Collections, and capabilities | `README.md` (this file)                                                                                              |
+| See what is implemented or planned                    | `README.md` → Implementation Status / Planned Scope                                                                  |
+| Understand the `net_common` Collection                | [`ansible_collections/routeswitchdev/net_common/README.md`](ansible_collections/routeswitchdev/net_common/README.md) |
+| Understand the `net_iosxe` Collection and VLAN role   | [`ansible_collections/routeswitchdev/net_iosxe/README.md`](ansible_collections/routeswitchdev/net_iosxe/README.md)   |
+| Run or peer-review test cases                         | [`docs/testing/`](docs/testing/README.md)                                                                            |
 
-## Repository Index
+## Collections
 
-| File                                                                                                     | Description                                                                                                                          |
-|----------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------|
-| `ansible.cfg`                                                                                            | Repository Ansible configuration, including inventory location, collection paths, connection settings, timeouts, and SSH pipelining. |
-| `requirements.yml`                                                                                       | External Ansible collection and role dependencies required by this repository.                                                       |
-| `LICENSE`                                                                                                | Apache License 2.0 governing use and distribution of this repository.                                                                |
-| `ansible_collections/routeswitchdev/net_common/README.md`                                                | Documentation for shared functionality provided by the `net_common` collection.                                                      |
-| `ansible_collections/routeswitchdev/net_common/roles/result_contract/tasks/main.yml`                     | Entry point for the `result_contract` role.                                                                                          |
-| `ansible_collections/routeswitchdev/net_common/roles/result_contract/tasks/validate_result_contract.yml` | Validation logic enforcing the standard `capability_result` contract.                                                                |
-| `ansible_collections/routeswitchdev/net_common/roles/result_contract/vars/main.yml`                      | Required keys, allowed keys, and enumerated values used by the result contract validator.                                            |
-| `ansible_collections/routeswitchdev/net_common/tests/result_contract/test_validate_result_contract.yml`  | Localhost test suite covering positive and negative result contract validation cases.                                                |
-| `ansible_collections/routeswitchdev/net_iosxe/galaxy.yml`                                                | Collection metadata for the Cisco IOS/IOS-XE automation collection.                                                                  |
-| `ansible_collections/routeswitchdev/net_iosxe/README.md`                                                 | Documentation for the Cisco IOS/IOS-XE collection and its supported capabilities.                                                    |
-| `ansible_collections/routeswitchdev/net_iosxe/roles/vlan/meta/argument_specs.yml`                        | Public input contract for the `vlan` role (`vlan_id`, `vlan_name`, `vlan_action`).                                                    |
-| `ansible_collections/routeswitchdev/net_iosxe/roles/vlan/tasks/main.yml`                                 | Entry point for the `vlan` role, orchestrating validate → gather → evaluate → apply → verify.                                        |
-| `ansible_collections/routeswitchdev/net_iosxe/tests/vlan/`                                               | VLAN role test fixtures - `--extra-vars` input files covering provisioning, verify, removal, input validation, idempotency, check mode, and failure handling. |
-| `playbooks/vlan.yml`                                                                                     | Reference playbook invoking the `vlan` role and exposing its `capability_result`.                                                     |
-| `docs/testing.md`                                                                                        | Detailed test coverage, peer-review instructions, and run commands for all collections.                                               |
+| Collection                  | Purpose                      | Capabilities                   |
+| --------------------------- | ---------------------------- | ------------------------------ |
+| `routeswitchdev.net_common` | Minimal shared functionality | Result contract and validation |
+| `routeswitchdev.net_iosxe`  | Cisco IOS/IOS-XE automation  | VLAN management                |
+
+See each Collection's README for detailed usage and behavior.
 
 ## Repository Structure
 
@@ -50,7 +39,10 @@ ansible-network-automation/
 ├── playbooks/
 │   └── vlan.yml
 ├── docs/
-│   └── testing.md
+│   └── testing/
+│       ├── README.md
+│       ├── net_common.md
+│       └── vlan.md
 │
 └── ansible_collections/
     └── routeswitchdev/
@@ -68,108 +60,99 @@ ansible-network-automation/
                 └── vlan/
 ```
 
-## Collections
+### Important Files
 
-### `routeswitchdev.net_common`
+#### Repository-Level
 
-Provides minimal shared functionality used across network automation capabilities.
+| File                 | Purpose                               |
+| -------------------- | ------------------------------------- |
+| `ansible.cfg`        | Ansible configuration                 |
+| `requirements.yml`   | External Ansible dependencies         |
+| `playbooks/vlan.yml` | Reference VLAN playbook               |
+| `docs/testing/`      | Test procedures and peer-review guide |
 
-Current functionality includes:
+#### net_common
 
-* Standard capability result contract
-* Result validation
-* Common evidence structures
-* Shared reporting conventions
+Base path: `ansible_collections/routeswitchdev/net_common/`
 
-See [`ansible_collections/routeswitchdev/net_common/README.md`](ansible_collections/routeswitchdev/net_common/README.md) for details.
+| File                                                       | Purpose                       |
+| ---------------------------------------------------------- | ----------------------------- |
+| `README.md`                                                | Collection documentation      |
+| `roles/result_contract/tasks/main.yml`                     | Result contract entry point   |
+| `roles/result_contract/tasks/validate_result_contract.yml` | Validates `capability_result` |
+| `roles/result_contract/vars/main.yml`                      | Result contract definitions   |
+| `tests/result_contract/test_validate_result_contract.yml`  | Result contract tests         |
 
-### `routeswitchdev.net_iosxe`
+#### net_iosxe
 
-Provides automation capabilities for Cisco IOS and IOS-XE network devices.
+Base path: `ansible_collections/routeswitchdev/net_iosxe/`
 
-Capabilities are implemented as independently usable Ansible roles.
-
-See [`ansible_collections/routeswitchdev/net_iosxe/README.md`](ansible_collections/routeswitchdev/net_iosxe/README.md) for details.
+| File                                 | Purpose                                 |
+| ------------------------------------ | --------------------------------------- |
+| `README.md`                          | Collection and capability documentation |
+| `galaxy.yml`                         | Collection metadata                     |
+| `roles/vlan/meta/argument_specs.yml` | VLAN role input contract                |
+| `roles/vlan/tasks/main.yml`          | VLAN role entry point and workflow      |
+| `tests/vlan/`                        | VLAN test inputs and scenarios          |
 
 ## Architecture
 
-The repository follows these primary design rules:
+The repository follows these design rules:
 
-* Platform-specific automation belongs in platform-specific collections.
-* Individual automation capabilities are implemented as roles.
-* Playbooks provide orchestration.
-* Roles provide implementation.
-* Roles should remain independently usable.
-* Shared functionality should remain minimal and stable.
+* Platform-specific automation belongs in platform-specific Collections.
+* Automation capabilities are implemented as roles.
+* Playbooks orchestrate; roles implement.
+* Roles remain independently usable.
+* Shared functionality remains minimal and stable.
 * Prefer declarative Ansible resource modules where available.
+* Validate inputs before making changes.
 * Preserve idempotency.
-* Validate inputs before making device changes.
-* Fail safely when input or device state is invalid.
+* Fail safely.
 * Verify changes before reporting successful convergence.
 
-A capability generally follows this lifecycle:
+A capability generally follows:
 
-```text
-validate → gather → evaluate → apply → verify
-```
-
-## Playbooks
-
-The `playbooks/` directory contains engineer-facing orchestration workflows.
-
-Playbooks should coordinate collections and roles without embedding capability-specific implementation logic.
-
-## Inventory
-
-The `inventory/` directory contains Ansible inventory and environment-specific variables.
-
-Environment-specific configuration should remain outside reusable collection and role implementation.
+1. validate
+2. gather
+3. evaluate
+4. apply
+5. verify
 
 ## Implementation Status
 
-**`net_common`** - the standard `capability_result` contract and its validator are
-implemented and tested. Per-host result recording (beyond the contract itself),
-sensitive-data redaction, local evidence persistence, and run-level summaries are
-currently deferred until a capability demonstrates a shared requirement for them - they
-are documented as target ownership, not built yet.
+| Collection / Capability | Implemented                                                                               |
+| ----------------------- | ----------------------------------------------------------------------------------------- |
+| `net_common`            | `capability_result` contract and validator                                                |
+| `net_iosxe` / `vlan`    | Create, delete, verify, deletion safety, connection retry/recovery, `unverified` handling |
 
-**`net_iosxe` / `vlan` role** - `create`, `delete`, and `verify` are implemented, including
-access-port and trunk deletion-dependency safety, bounded retry/recovery on connection
-failures, and the `unverified` outcome for results that can't be confirmed even after
-bounded retry.
+## Planned / Deferred Scope
 
-## Future Scope
-
-Documented but intentionally not yet implemented:
-
-* **VTP safety** - whether a VLAN operation could propagate through VTP, and blocking
-  operations that could affect other devices. Not implemented; VLAN operations are
-  currently assumed to affect only the target switch.
-* **Additional VLAN dependency types** - voice VLAN assignments, SVIs, private VLANs,
-  SPAN/RSPAN, EVPN/VXLAN, service instances, and other platform-specific references.
-  Current VLAN deletion safety is limited to configured access-port and trunk
-  allowed-VLAN dependencies.
-* **`net_common`'s deferred ownership items** - per-host result recording, redaction,
-  local evidence persistence, and run-level summaries (see Implementation Status above).
+| Area              | Scope                                                                                             | Current Limitation                                                    |
+| ----------------- | ------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| VTP safety        | Detect and prevent VLAN changes that could propagate through VTP                                  | Operations assume changes affect only the target switch               |
+| VLAN dependencies | Voice VLANs, SVIs, private VLANs, SPAN/RSPAN, EVPN/VXLAN, service instances, and other references | Deletion safety currently covers access ports and trunk allowed VLANs |
+| `net_common`      | Per-host result recording, redaction, evidence persistence, and run-level summaries               | Deferred until a shared requirement is demonstrated                   |
 
 ## Testing
 
-Tests should validate both successful behavior and expected failure conditions.
-Collection-specific tests are maintained within their respective collections under
-`ansible_collections/routeswitchdev/<collection>/tests/`.
+Tests cover shared result-contract validation and VLAN capability behavior.
 
-See [`docs/testing.md`](docs/testing.md) for detailed test coverage, peer-review
-instructions, and the exact commands to run each collection's tests.
+| Collection / Capability        | Coverage                                                                                                    |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------------- |
+| `net_common` / Result Contract | Valid results, structure validation, value validation, and collection validation                            |
+| `net_iosxe` / VLAN             | Provisioning, verification, removal safety, input validation, idempotency, check mode, and failure handling |
+
+Tests are maintained within each Collection under:
+
+```text
+ansible_collections/routeswitchdev/<collection>/tests/
+```
+
+See [`docs/testing/`](docs/testing/README.md) for individual test scenarios, fixtures, expected results, known coverage gaps, execution commands, and peer-review procedures.
 
 ## Requirements
 
-External Ansible dependencies are declared in:
-
-```text
-requirements.yml
-```
-
-Install repository dependencies with:
+External Ansible dependencies are declared in `requirements.yml`.
 
 ```bash
 ansible-galaxy install -r requirements.yml
@@ -177,4 +160,4 @@ ansible-galaxy install -r requirements.yml
 
 ## License
 
-This project is licensed under the Apache License 2.0. See [`LICENSE`](LICENSE) for details.
+Licensed under the Apache License 2.0. See [`LICENSE`](LICENSE).

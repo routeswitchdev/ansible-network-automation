@@ -10,10 +10,8 @@
 #   - No configuration change is made to the device.
 #   - status: changed (predicted), execution_mode: check,
 #     verification: not_attempted.
-#   - capability_result.outcome is intentionally left undefined for this
-#     path - the correct value for a predicted check-mode change is not
-#     yet decided in vlan.md (see the TODO in tasks/main.yml). Do not
-#     assert a specific outcome value for this fixture yet.
+#   - capability_result.outcome is intentionally omitted for a predicted
+#     change - see the Check Mode section of vlan.md.
 
 vlan_id: 300
 vlan_name: STAGING
