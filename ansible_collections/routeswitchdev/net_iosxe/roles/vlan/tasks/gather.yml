@@ -8,6 +8,9 @@
   cisco.ios.ios_vlans:
     state: gathered
   register: vlan_gathered_result
+  until: vlan_gathered_result is succeeded
+  retries: 2
+  delay: 10
 
 - name: "vlan: find matching VLAN entries for the requested vlan_id"
   ansible.builtin.set_fact:

@@ -3,12 +3,27 @@
 #
 # Runs only after apply.yml changes the device.
 # Re-gathers VLAN state and verifies convergence independently.
-# Verification failure fails the host.
+# Verification failure fails the host - EXCEPT when the re-gather itself
+# cannot be completed after bounded recovery attempts (vlan.md's Connection
+# Failures / Indeterminate Results sections). In that case a mutation may
+# genuinely have reached the device but we cannot confirm it, so the result
+# is reported as indeterminate (outcome: unverified in main.yml) instead of
+# failing the host outright.
 
-- name: "vlan: re-gather VLAN configuration after apply"
-  cisco.ios.ios_vlans:
-    state: gathered
-  register: vlan_reverify_gathered_result
+- name: "vlan: re-gather VLAN configuration after apply, with bounded recovery"
+  block:
+    - name: "vlan: re-gather VLAN configuration after apply"
+      cisco.ios.ios_vlans:
+        state: gathered
+      register: vlan_reverify_gathered_result
+      until: vlan_reverify_gathered_result is succeeded
+      retries: 2
+      delay: 10
+  rescue:
+    - name: "vlan: mark result indeterminate after bounded recovery attempts failed"
+      ansible.builtin.set_fact:
+        vlan_verification: not_attempted
+        vlan_indeterminate: true
 
 - name: "vlan: find matching VLAN entries for the requested vlan_id after apply"
   ansible.builtin.set_fact:
@@ -18,25 +33,32 @@
         | selectattr('vlan_id', 'equalto', vlan_id)
         | list
       }}
+  when: vlan_indeterminate is not defined
 
 - name: "vlan: set resulting VLAN entry when it exists"
   ansible.builtin.set_fact:
     vlan_resulting: "{{ vlan_resulting_matches[0] }}"
-  when: vlan_resulting_matches | length > 0
+  when:
+    - vlan_indeterminate is not defined
+    - vlan_resulting_matches | length > 0
 
 - name: "vlan: set resulting VLAN entry to none when it does not exist"
   ansible.builtin.set_fact:
     vlan_resulting: ~
-  when: vlan_resulting_matches | length == 0
+  when:
+    - vlan_indeterminate is not defined
+    - vlan_resulting_matches | length == 0
 
 - name: "vlan: initialize post-change verification result"
   ansible.builtin.set_fact:
     vlan_verification: failed
+  when: vlan_indeterminate is not defined
 
 - name: "vlan: pass verification when VLAN exists and name is unmanaged"
   ansible.builtin.set_fact:
     vlan_verification: passed
   when:
+    - vlan_indeterminate is not defined
     - vlan_action == 'create'
     - vlan_resulting is not none
     - vlan_name is not defined
@@ -45,6 +67,7 @@
   ansible.builtin.set_fact:
     vlan_verification: passed
   when:
+    - vlan_indeterminate is not defined
     - vlan_action == 'create'
     - vlan_resulting is not none
     - vlan_name is defined
@@ -54,6 +77,7 @@
   ansible.builtin.set_fact:
     vlan_verification: passed
   when:
+    - vlan_indeterminate is not defined
     - vlan_action == 'delete'
     - vlan_resulting is none
 
@@ -62,4 +86,6 @@
     msg: >-
       Verification failed for vlan_id {{ vlan_id }}: resulting device state
       does not satisfy the requested intent after applying configuration.
-  when: vlan_verification != 'passed'
+  when:
+    - vlan_indeterminate is not defined
+    - vlan_verification != 'passed'

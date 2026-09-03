@@ -119,6 +119,7 @@
     - vlan_action == 'create'
     - vlan_outcome == 'provisioning_required'
     - not ansible_check_mode
+    - vlan_indeterminate is not defined
 
 - name: "vlan: record remediated outcome"
   ansible.builtin.set_fact:
@@ -127,6 +128,7 @@
     - vlan_action == 'create'
     - vlan_outcome == 'remediation_required'
     - not ansible_check_mode
+    - vlan_indeterminate is not defined
 
 - name: "vlan: record removed outcome"
   ansible.builtin.set_fact:
@@ -135,6 +137,19 @@
     - vlan_action == 'delete'
     - vlan_outcome == 'removal_required'
     - not ansible_check_mode
+    - vlan_indeterminate is not defined
+
+# vlan_indeterminate is set by verify.yml's rescue block when the
+# post-apply re-gather could not be completed after bounded recovery
+# attempts. A mutation may genuinely have reached the device, so this is
+# reported as unverified rather than assumed to have failed or succeeded.
+- name: "vlan: record unverified outcome"
+  ansible.builtin.set_fact:
+    vlan_final_outcome: unverified
+  when:
+    - vlan_convergence_required
+    - not ansible_check_mode
+    - vlan_indeterminate | default(false)
 
 
 # ---------------------------------------------------------------------------

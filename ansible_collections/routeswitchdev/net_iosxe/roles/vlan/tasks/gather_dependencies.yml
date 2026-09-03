@@ -26,6 +26,9 @@
   cisco.ios.ios_l2_interfaces:
     state: gathered
   register: vlan_l2_gathered_result
+  until: vlan_l2_gathered_result is succeeded
+  retries: 2
+  delay: 10
 
 - name: "vlan: find access interfaces assigned to the requested vlan_id, mode unset"
   ansible.builtin.set_fact:
