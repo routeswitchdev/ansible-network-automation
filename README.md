@@ -21,6 +21,10 @@ The repository is organized around two principles:
 | `ansible_collections/routeswitchdev/net_common/tests/result_contract/test_validate_result_contract.yml`  | Localhost test suite covering positive and negative result contract validation cases.                                                |
 | `ansible_collections/routeswitchdev/net_iosxe/galaxy.yml`                                                | Collection metadata for the Cisco IOS/IOS-XE automation collection.                                                                  |
 | `ansible_collections/routeswitchdev/net_iosxe/README.md`                                                 | Documentation for the Cisco IOS/IOS-XE collection and its supported capabilities.                                                    |
+| `ansible_collections/routeswitchdev/net_iosxe/roles/vlan/meta/argument_specs.yml`                        | Public input contract for the `vlan` role (`vlan_id`, `vlan_name`, `vlan_action`).                                                    |
+| `ansible_collections/routeswitchdev/net_iosxe/roles/vlan/tasks/main.yml`                                 | Entry point for the `vlan` role, orchestrating validate → gather → evaluate → apply → verify.                                        |
+| `ansible_collections/routeswitchdev/net_iosxe/tests/vlan/`                                               | VLAN role test fixtures - `--extra-vars` input files covering provisioning, verify, input validation, idempotency, and check mode.   |
+| `playbooks/vlan.yml`                                                                                     | Reference playbook invoking the `vlan` role and exposing its `capability_result`.                                                     |
 
 ## Repository Structure
 
@@ -33,6 +37,7 @@ ansible-network-automation/
 │
 ├── inventory/
 ├── playbooks/
+│   └── vlan.yml
 │
 └── ansible_collections/
     └── routeswitchdev/
@@ -44,7 +49,10 @@ ansible-network-automation/
         └── net_iosxe/
             ├── README.md
             ├── galaxy.yml
-            └── roles/
+            ├── roles/
+            │   └── vlan/
+            └── tests/
+                └── vlan/
 ```
 
 ## Collections

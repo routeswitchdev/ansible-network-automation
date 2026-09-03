@@ -48,16 +48,26 @@
     - vlan_name_conflicts is defined
     - vlan_name_conflicts | length > 0
 
-- name: "vlan: evaluate outcome when VLAN does not exist"
+- name: "vlan: evaluate outcome when VLAN does not exist and is desired present"
   ansible.builtin.set_fact:
     vlan_outcome: provisioning_required
-  when: vlan_current is none
+  when:
+    - vlan_current is none
+    - vlan_action in ['create', 'verify']
+
+- name: "vlan: evaluate outcome when VLAN does not exist and deletion was requested"
+  ansible.builtin.set_fact:
+    vlan_outcome: compliant
+  when:
+    - vlan_current is none
+    - vlan_action == 'delete'
 
 - name: "vlan: evaluate outcome when VLAN exists and name is unmanaged"
   ansible.builtin.set_fact:
     vlan_outcome: compliant
   when:
     - vlan_current is not none
+    - vlan_action != 'delete'
     - vlan_name is not defined
 
 - name: "vlan: evaluate outcome when VLAN exists and name matches"
@@ -65,6 +75,7 @@
     vlan_outcome: compliant
   when:
     - vlan_current is not none
+    - vlan_action != 'delete'
     - vlan_name is defined
     - vlan_current.name == vlan_name
 
@@ -73,5 +84,30 @@
     vlan_outcome: remediation_required
   when:
     - vlan_current is not none
+    - vlan_action != 'delete'
     - vlan_name is defined
     - vlan_current.name != vlan_name
+
+# ---------------------------------------------------------------------------
+# Deletion safety
+# ---------------------------------------------------------------------------
+#
+# gather_dependencies.yml has already populated vlan_dependency_found and
+# vlan_dependency_interface_names when this branch is reached (main.yml
+# includes it only for vlan_action == 'delete' and vlan_current is not none).
+
+- name: "vlan: evaluate outcome when VLAN exists, deletion requested, no dependency found"
+  ansible.builtin.set_fact:
+    vlan_outcome: removal_required
+  when:
+    - vlan_current is not none
+    - vlan_action == 'delete'
+    - not vlan_dependency_found
+
+- name: "vlan: evaluate outcome when VLAN exists, deletion requested, dependency found"
+  ansible.builtin.set_fact:
+    vlan_outcome: blocked
+  when:
+    - vlan_current is not none
+    - vlan_action == 'delete'
+    - vlan_dependency_found

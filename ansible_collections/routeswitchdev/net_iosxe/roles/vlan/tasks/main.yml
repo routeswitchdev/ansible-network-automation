@@ -14,6 +14,12 @@
 - name: "vlan: gather current state"
   ansible.builtin.include_tasks: gather.yml
 
+- name: "vlan: gather deletion dependency state"
+  ansible.builtin.include_tasks: gather_dependencies.yml
+  when:
+    - vlan_action == 'delete'
+    - vlan_current is not none
+
 - name: "vlan: evaluate current vs desired state"
   ansible.builtin.include_tasks: evaluate.yml
 
@@ -21,6 +27,14 @@
   ansible.builtin.set_fact:
     vlan_previous_state: "{{ vlan_current | default({}, true) }}"
     vlan_changed: false
+
+- name: "vlan: determine whether convergence is required"
+  ansible.builtin.set_fact:
+    vlan_convergence_required: >-
+      {{
+        (vlan_action == 'create' and vlan_outcome in ['provisioning_required', 'remediation_required'])
+        or (vlan_action == 'delete' and vlan_outcome == 'removal_required')
+      }}
 
 
 # ---------------------------------------------------------------------------
@@ -43,6 +57,14 @@
     - vlan_action == 'create'
     - vlan_outcome == 'compliant'
 
+- name: "vlan: report compliant outcome for delete action"
+  ansible.builtin.set_fact:
+    vlan_verification: passed
+    vlan_final_outcome: compliant
+  when:
+    - vlan_action == 'delete'
+    - vlan_outcome == 'compliant'
+
 - name: "vlan: report noncompliant verify outcome without mutating the device"
   ansible.builtin.set_fact:
     vlan_verification: failed
@@ -51,6 +73,18 @@
     - vlan_action == 'verify'
     - vlan_outcome in ['provisioning_required', 'remediation_required']
 
+- name: "vlan: report blocked outcome without mutating the device"
+  ansible.builtin.set_fact:
+    vlan_verification: not_attempted
+    vlan_final_outcome: blocked
+    vlan_warnings:
+      - >-
+        VLAN {{ vlan_id }} is in use by interface(s):
+        {{ vlan_dependency_interface_names | join(', ') }}. Deletion aborted.
+  when:
+    - vlan_action == 'delete'
+    - vlan_outcome == 'blocked'
+
 
 # ---------------------------------------------------------------------------
 # Mutation path
@@ -58,9 +92,7 @@
 
 - name: "vlan: apply changes for convergence"
   ansible.builtin.include_tasks: apply.yml
-  when:
-    - vlan_action == 'create'
-    - vlan_outcome in ['provisioning_required', 'remediation_required']
+  when: vlan_convergence_required
 
 - name: "vlan: record changed status from the apply result"
   ansible.builtin.set_fact:
@@ -68,18 +100,16 @@
       {{
         (vlan_apply_no_name_result.changed | default(false))
         or (vlan_apply_named_result.changed | default(false))
+        or (vlan_apply_delete_result.changed | default(false))
       }}
-  when:
-    - vlan_action == 'create'
-    - vlan_outcome in ['provisioning_required', 'remediation_required']
+  when: vlan_convergence_required
 
 # Post-change verification runs only after a real configuration attempt.
 # In check mode, ios_vlans predicts changes without mutating the device.
 - name: "vlan: verify resulting state after applying changes"
   ansible.builtin.include_tasks: verify.yml
   when:
-    - vlan_action == 'create'
-    - vlan_outcome in ['provisioning_required', 'remediation_required']
+    - vlan_convergence_required
     - not ansible_check_mode
 
 - name: "vlan: record provisioned outcome"
@@ -98,13 +128,22 @@
     - vlan_outcome == 'remediation_required'
     - not ansible_check_mode
 
+- name: "vlan: record removed outcome"
+  ansible.builtin.set_fact:
+    vlan_final_outcome: removed
+  when:
+    - vlan_action == 'delete'
+    - vlan_outcome == 'removal_required'
+    - not ansible_check_mode
+
 
 # ---------------------------------------------------------------------------
 # Check mode
 # ---------------------------------------------------------------------------
 
 # No real device change occurs in check mode, so post-change verification
-# is not attempted.
+# is not attempted. Applies equally to a predicted create/remediate and a
+# predicted delete.
 #
 # TODO(vlan.md): define the final capability outcome for a predicted change
 # before assigning vlan_final_outcome here.
@@ -112,8 +151,7 @@
   ansible.builtin.set_fact:
     vlan_verification: not_attempted
   when:
-    - vlan_action == 'create'
-    - vlan_outcome in ['provisioning_required', 'remediation_required']
+    - vlan_convergence_required
     - ansible_check_mode
 
 
@@ -130,7 +168,7 @@
       execution_mode: "{{ 'check' if ansible_check_mode else 'apply' }}"
       verification: "{{ vlan_verification }}"
       timestamp: "{{ now(utc=true).strftime('%Y-%m-%dT%H:%M:%SZ') }}"
-      warnings: []
+      warnings: "{{ vlan_warnings | default([]) }}"
       errors: []
       requested_action: "{{ vlan_action }}"
       previous_state: "{{ vlan_previous_state }}"
@@ -149,6 +187,6 @@
     capability_result: >-
       {{
         capability_result
-        | combine({'resulting_state': vlan_resulting})
+        | combine({'resulting_state': vlan_resulting | default({}, true)})
       }}
   when: vlan_resulting is defined

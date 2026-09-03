@@ -5,13 +5,6 @@
 # This file validates everything argument_specs cannot express: numeric ranges, protected/reserved IDs, and name length.
 # No device state is gathered or contacted here.
 
-- name: "vlan: reject delete action (not yet implemented)"
-  ansible.builtin.fail:
-    msg: >-
-      vlan_action 'delete' is not yet implemented by this role.
-      Supported actions: create, verify.
-  when: vlan_action == 'delete'
-
 - name: "vlan: reject out-of-range vlan_id"
   ansible.builtin.fail:
     msg: >-

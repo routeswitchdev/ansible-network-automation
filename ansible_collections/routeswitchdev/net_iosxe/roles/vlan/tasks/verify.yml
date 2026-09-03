@@ -37,6 +37,7 @@
   ansible.builtin.set_fact:
     vlan_verification: passed
   when:
+    - vlan_action == 'create'
     - vlan_resulting is not none
     - vlan_name is not defined
 
@@ -44,9 +45,17 @@
   ansible.builtin.set_fact:
     vlan_verification: passed
   when:
+    - vlan_action == 'create'
     - vlan_resulting is not none
     - vlan_name is defined
     - vlan_resulting.name == vlan_name
+
+- name: "vlan: pass verification when VLAN is confirmed absent after deletion"
+  ansible.builtin.set_fact:
+    vlan_verification: passed
+  when:
+    - vlan_action == 'delete'
+    - vlan_resulting is none
 
 - name: "vlan: fail when resulting state does not satisfy requested intent"
   ansible.builtin.fail:

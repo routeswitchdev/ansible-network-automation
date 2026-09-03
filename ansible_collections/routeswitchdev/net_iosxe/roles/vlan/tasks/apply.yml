@@ -41,3 +41,13 @@
     - vlan_action == 'create'
     - vlan_outcome in ['provisioning_required', 'remediation_required']
     - vlan_name is defined
+
+- name: "vlan: delete VLAN"
+  cisco.ios.ios_vlans:
+    config:
+      - vlan_id: "{{ vlan_id }}"
+    state: deleted
+  register: vlan_apply_delete_result
+  when:
+    - vlan_action == 'delete'
+    - vlan_outcome == 'removal_required'

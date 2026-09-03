@@ -1,0 +1,77 @@
+---
+# net_iosxe/vlan: gather Layer 2 interface state for deletion safety.
+#
+# Included only for vlan_action == 'delete' when the requested VLAN exists.
+# Scope is deliberately limited to what cisco.ios.ios_l2_interfaces can
+# reliably represent: access VLAN assignment and trunk allowed-VLAN
+# membership. Voice VLANs, SVIs, and other dependency types are future
+# scope per vlan.md and are not checked here.
+#
+# Trunk membership is keyed on trunk.allowed_vlans being present, not on
+# mode == 'trunk' - live testing showed mode is only reported when
+# explicitly configured with `switchport mode trunk`; an interface can be
+# operating as a trunk (allowed_vlans populated) without it.
+
+- name: "vlan: gather Layer 2 interface configuration"
+  cisco.ios.ios_l2_interfaces:
+    state: gathered
+  register: vlan_l2_gathered_result
+
+- name: "vlan: find access interfaces assigned to the requested vlan_id"
+  ansible.builtin.set_fact:
+    vlan_access_dependency_names: >-
+      {{
+        vlan_l2_gathered_result.gathered
+        | selectattr('access', 'defined')
+        | selectattr('access.vlan', 'defined')
+        | selectattr('access.vlan', 'equalto', vlan_id)
+        | map(attribute='name')
+        | list
+      }}
+
+- name: "vlan: reset trunk dependency accumulator"
+  ansible.builtin.set_fact:
+    vlan_trunk_dependency_names: []
+
+- name: "vlan: reject unparseable trunk allowed-VLAN entries"
+  ansible.builtin.fail:
+    msg: >-
+      Unable to reliably parse trunk allowed-VLAN entry '{{ item.1 }}' on
+      interface {{ item.0.name }}. Aborting the deletion safety check
+      rather than risk misjudging a dependency.
+  loop: >-
+    {{
+      vlan_l2_gathered_result.gathered
+      | selectattr('trunk', 'defined')
+      | selectattr('trunk.allowed_vlans', 'defined')
+      | subelements('trunk.allowed_vlans')
+    }}
+  when: item.1 is not regex('^[0-9]+(-[0-9]+)?$')
+
+- name: "vlan: find trunk interfaces carrying the requested vlan_id"
+  ansible.builtin.set_fact:
+    vlan_trunk_dependency_names: "{{ vlan_trunk_dependency_names + [item.0.name] }}"
+  loop: >-
+    {{
+      vlan_l2_gathered_result.gathered
+      | selectattr('trunk', 'defined')
+      | selectattr('trunk.allowed_vlans', 'defined')
+      | subelements('trunk.allowed_vlans')
+    }}
+  when:
+    - item.0.name not in vlan_trunk_dependency_names
+    - >-
+      (item.1 is regex('^' ~ vlan_id ~ '$'))
+      or (
+        '-' in item.1
+        and vlan_id >= (item.1.split('-')[0] | int)
+        and vlan_id <= (item.1.split('-')[1] | int)
+      )
+
+- name: "vlan: combine dependency findings"
+  ansible.builtin.set_fact:
+    vlan_dependency_interface_names: "{{ vlan_access_dependency_names + vlan_trunk_dependency_names }}"
+
+- name: "vlan: record whether a dependency was found"
+  ansible.builtin.set_fact:
+    vlan_dependency_found: "{{ vlan_dependency_interface_names | length > 0 }}"
