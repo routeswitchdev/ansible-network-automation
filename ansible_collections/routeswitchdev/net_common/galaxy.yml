@@ -1,0 +1,22 @@
+---
+namespace: routeswitchdev
+name: net_common
+version: 1.0.0
+
+readme: README.md
+
+authors:
+  - Daniel Arapi
+
+description: Shared result contract, evidence, and reporting mechanisms for network automation capabilities.
+
+license:
+  - Apache-2.0
+
+tags:
+  - networking
+  - automation
+
+dependencies: {}
+
+repository: https://github.com/routeswitchdev/ansible-network-automation

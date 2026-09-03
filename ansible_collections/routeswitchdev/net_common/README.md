@@ -12,7 +12,7 @@ Capabilities report per-host results to Common using `capability_result`.
 Example:
 
 ```yaml
-common_result:
+capability_result:
   host: iol-l2
   capability: vlan_management
   status: changed
