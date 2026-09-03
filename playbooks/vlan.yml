@@ -5,6 +5,7 @@
 
   roles:
     - routeswitchdev.net_iosxe.vlan
+    - routeswitchdev.net_common.result_contract
 
   post_tasks:
     - name: "vlan: expose capability_result"
