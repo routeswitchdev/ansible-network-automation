@@ -145,8 +145,10 @@
 # is not attempted. Applies equally to a predicted create/remediate and a
 # predicted delete.
 #
-# TODO(vlan.md): define the final capability outcome for a predicted change
-# before assigning vlan_final_outcome here.
+# vlan_final_outcome is deliberately left unset here - see vlan.md's Check
+# Mode section. status/execution_mode/verification already fully describe
+# a predicted change; no existing outcome value fits one without
+# implying a real mutation that did not happen.
 - name: "vlan: report predicted change in check mode without mutating the device"
   ansible.builtin.set_fact:
     vlan_verification: not_attempted
