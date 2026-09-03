@@ -7,6 +7,16 @@ The repository is organized around two principles:
 * **Collections** define platform or shared automation boundaries.
 * **Roles** define individual automation capabilities.
 
+## Documentation Map
+
+| I want to...                                | Refer to                                                                             |
+|----------------------------------------------|---------------------------------------------------------------------------------------|
+| Understand the project, collections, and capabilities | `README.md` (this file)                                                    |
+| See what's implemented vs. deferred/future    | `README.md` - Implementation Status and Future Scope, below                          |
+| Understand `net_common`                       | [`ansible_collections/routeswitchdev/net_common/README.md`](ansible_collections/routeswitchdev/net_common/README.md) |
+| Understand the `vlan` role                    | [`ansible_collections/routeswitchdev/net_iosxe/README.md`](ansible_collections/routeswitchdev/net_iosxe/README.md)   |
+| Run or review tests                           | [`docs/testing.md`](docs/testing.md)                                                 |
+
 ## Repository Index
 
 | File                                                                                                     | Description                                                                                                                          |
@@ -23,8 +33,9 @@ The repository is organized around two principles:
 | `ansible_collections/routeswitchdev/net_iosxe/README.md`                                                 | Documentation for the Cisco IOS/IOS-XE collection and its supported capabilities.                                                    |
 | `ansible_collections/routeswitchdev/net_iosxe/roles/vlan/meta/argument_specs.yml`                        | Public input contract for the `vlan` role (`vlan_id`, `vlan_name`, `vlan_action`).                                                    |
 | `ansible_collections/routeswitchdev/net_iosxe/roles/vlan/tasks/main.yml`                                 | Entry point for the `vlan` role, orchestrating validate → gather → evaluate → apply → verify.                                        |
-| `ansible_collections/routeswitchdev/net_iosxe/tests/vlan/`                                               | VLAN role test fixtures - `--extra-vars` input files covering provisioning, verify, input validation, idempotency, and check mode.   |
+| `ansible_collections/routeswitchdev/net_iosxe/tests/vlan/`                                               | VLAN role test fixtures - `--extra-vars` input files covering provisioning, verify, removal, input validation, idempotency, check mode, and failure handling. |
 | `playbooks/vlan.yml`                                                                                     | Reference playbook invoking the `vlan` role and exposing its `capability_result`.                                                     |
+| `docs/testing.md`                                                                                        | Detailed test coverage, peer-review instructions, and run commands for all collections.                                               |
 
 ## Repository Structure
 
@@ -38,6 +49,8 @@ ansible-network-automation/
 ├── inventory/
 ├── playbooks/
 │   └── vlan.yml
+├── docs/
+│   └── testing.md
 │
 └── ansible_collections/
     └── routeswitchdev/
@@ -112,17 +125,41 @@ The `inventory/` directory contains Ansible inventory and environment-specific v
 
 Environment-specific configuration should remain outside reusable collection and role implementation.
 
+## Implementation Status
+
+**`net_common`** - the standard `capability_result` contract and its validator are
+implemented and tested. Per-host result recording (beyond the contract itself),
+sensitive-data redaction, local evidence persistence, and run-level summaries are
+currently deferred until a capability demonstrates a shared requirement for them - they
+are documented as target ownership, not built yet.
+
+**`net_iosxe` / `vlan` role** - `create`, `delete`, and `verify` are implemented, including
+access-port and trunk deletion-dependency safety, bounded retry/recovery on connection
+failures, and the `unverified` outcome for results that can't be confirmed even after
+bounded retry.
+
+## Future Scope
+
+Documented but intentionally not yet implemented:
+
+* **VTP safety** - whether a VLAN operation could propagate through VTP, and blocking
+  operations that could affect other devices. Not implemented; VLAN operations are
+  currently assumed to affect only the target switch.
+* **Additional VLAN dependency types** - voice VLAN assignments, SVIs, private VLANs,
+  SPAN/RSPAN, EVPN/VXLAN, service instances, and other platform-specific references.
+  Current VLAN deletion safety is limited to configured access-port and trunk
+  allowed-VLAN dependencies.
+* **`net_common`'s deferred ownership items** - per-host result recording, redaction,
+  local evidence persistence, and run-level summaries (see Implementation Status above).
+
 ## Testing
 
 Tests should validate both successful behavior and expected failure conditions.
+Collection-specific tests are maintained within their respective collections under
+`ansible_collections/routeswitchdev/<collection>/tests/`.
 
-Collection-specific tests are maintained within their respective collections:
-
-```text
-ansible_collections/routeswitchdev/<collection>/tests/
-```
-
-Tests that do not require network devices should run against `localhost` whenever practical.
+See [`docs/testing.md`](docs/testing.md) for detailed test coverage, peer-review
+instructions, and the exact commands to run each collection's tests.
 
 ## Requirements
 

@@ -104,45 +104,9 @@ Only contract validation is currently implemented. Later processing stages shoul
 
 ## Result Contract Testing
 
-The Common result contract includes an independent test suite for `tasks/validate_result_contract.yml`.
+The Common result contract has an independent, 15-case test suite covering both valid and
+invalid `capability_result` structures. It runs entirely on `localhost` - no network
+inventory or device connectivity required - and currently passes in full.
 
-The tests run entirely on `localhost` and do not connect to any network device. They verify both valid and invalid `capability_result` structures.
-
-### Test Coverage
-
-The test suite verifies:
-
-1. A minimal valid `capability_result` is accepted.
-2. A fully populated valid `capability_result` is accepted.
-3. An undefined `capability_result` is rejected.
-4. A non-mapping `capability_result` is rejected.
-5. Missing required keys are rejected.
-6. Unknown keys are rejected.
-7. Invalid `status` values are rejected.
-8. Invalid `execution_mode` values are rejected.
-9. Invalid `verification` values are rejected.
-10. Invalid `host` and `capability` values are rejected.
-11. Malformed timestamps are rejected.
-12. Invalid `requested_action` and `outcome` values are rejected.
-13. `warnings` and `errors` must be lists.
-14. Every item in `warnings` and `errors` must be a string.
-15. `previous_state` and `resulting_state`, when provided, must be mappings/dicts.
-
-### Test Location
-
-```text
-ansible_collections/routeswitchdev/net_common/tests/result_contract/test_validate_result_contract.yml
-```
-
-### Run the Tests
-
-From the collection root:
-- inventory param not needed for this test
-
-```bash
-uv run ansible-playbook tests/result_contract/test_validate_result_contract.yml
-```
-
-The test suite uses explicit assertions to verify expected behavior. A negative test only passes when the validator actually rejects the invalid input; unexpected acceptance causes the test playbook to fail.
-
-No network inventory or device connectivity is required.
+See [`docs/testing.md`](../../../docs/testing.md) for the full test list, location, and
+run instructions.
