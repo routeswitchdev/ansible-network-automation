@@ -1,0 +1,22 @@
+---
+# Scenario: connection attempt with an incorrect password against a real,
+# reachable device.
+#
+# This is a connection/transport-layer failure test, not a VLAN input
+# validation test. ansible_password here overrides the inventory-provided
+# credential for this run only.
+#
+# Expected behavior:
+#   - The connection attempt fails with the genuine underlying SSH/IOS-XE
+#     authentication rejection error - not a fabricated or generic message,
+#     and not misattributed to a missing enable password (this is a login
+#     failure, not a privilege failure).
+#   - No configuration change is made; capability_result is never
+#     constructed, since the role never reaches the point of gathering
+#     device state.
+#   - The host is reported failed, not silently treated as unchanged or
+#     converged.
+
+vlan_id: 100
+vlan_action: verify
+ansible_password: "definitely-wrong-password"

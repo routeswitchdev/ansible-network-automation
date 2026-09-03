@@ -1,0 +1,24 @@
+---
+# Scenario: connection attempt against an address nothing responds on.
+#
+# This is a connection/transport-layer failure test, not a VLAN input
+# validation test. ansible_host here overrides the inventory-provided
+# address for this run only, redirecting to an unused IP in the same lab
+# subnet (confirmed unresponsive to ICMP at the time this fixture was
+# written - re-verify if the lab topology changes).
+#
+# Run against any real inventory host, e.g.:
+#   -l iol-l2 --extra-vars @unreachable_device.yml
+#
+# Expected behavior:
+#   - Ansible reports the host as unreachable (not failed), once the
+#     persistent-connection timeout settings in ansible.cfg are exhausted.
+#   - No configuration change is made; capability_result is never
+#     constructed.
+#   - An unreachable host must not be reported as successfully changed or
+#     converged.
+#   - In a multi-host run, unaffected hosts continue processing normally.
+
+vlan_id: 100
+vlan_action: verify
+ansible_host: 10.10.20.250
