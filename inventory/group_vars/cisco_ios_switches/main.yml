@@ -1,0 +1,13 @@
+---
+network_vendor: ios
+ansible_network_os: cisco.ios.ios
+ansible_connection: ansible.netcommon.network_cli
+
+ansible_network_cli_ssh_type: auto
+# Override per-host with `paramiko` for an incompatible SSH implementation.
+
+ansible_user: "{{ vault_ios_user }}"
+ansible_password: "{{ vault_ios_password }}"
+ansible_become: true
+ansible_become_method: enable
+ansible_become_password: "{{ vault_ios_enable_password }}"

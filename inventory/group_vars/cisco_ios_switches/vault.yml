@@ -1,0 +1,6 @@
+---
+# Local, gitignored credentials for the CML sandbox. Not encrypted -
+# fine for a throwaway lab, do not reuse this pattern for real devices.
+vault_ios_user: cisco
+vault_ios_password: cisco
+vault_ios_enable_password: cisco
